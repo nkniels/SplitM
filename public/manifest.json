@@ -1,0 +1,27 @@
+{
+  "name": "SplitM",
+  "short_name": "SplitM",
+  "description": "A smart, world-class PWA group expense manager with Telegram integration, offline support, and smart settlements.",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "background_color": "#fdfbf7",
+  "theme_color": "#004aad",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "favicon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "share_target": {
+    "action": "/index.html",
+    "method": "GET",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url"
+    }
+  }
+}

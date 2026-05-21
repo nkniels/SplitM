@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="fr" id="html-root">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#004aad">
+    <link rel="manifest" href="manifest.json">
+    <title>SplitM</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- External SDKs -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    
+    <!-- Firebase SDKs for Multi-user Support -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+</head>
+<body>
+    <!-- Indicators & Toasts -->
+    <div id="offline-banner" class="offline-banner" style="display:none;" data-i18n="offline_banner">Hors ligne — données locales</div>
+    <div id="auto-save-indicator" class="auto-save-indicator"><i class="fa-solid fa-cloud-arrow-up"></i> <span data-i18n="saved">Sauvegardé ✓</span></div>
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Background animations -->
+    <div class="bg-animations">
+        <i class="fa-solid fa-coins floating-icon icon-1"></i>
+        <i class="fa-solid fa-wallet floating-icon icon-2"></i>
+        <i class="fa-solid fa-receipt floating-icon icon-3"></i>
+        <i class="fa-solid fa-credit-card floating-icon icon-4"></i>
+    </div>
+
+    <!-- Splash Screen -->
+    <div id="splash-screen" class="splash-screen">
+        <div class="splash-logo">
+            <svg viewBox="0 0 100 100" class="splitm-svg">
+                <path class="m-blue" d="M15 85 L15 35 L40 60 L60 30" fill="none" stroke="#004aad" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" />
+                <path class="m-teal" d="M40 85 L60 55 L85 85 L85 30" fill="none" stroke="#38bdf8" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            <h1 class="splash-title">SplitM</h1>
+            <div class="skeleton-loader" style="width:150px; height:10px; margin-top:20px; border-radius:5px;"></div>
+        </div>
+    </div>
+
+    <div class="app-container" style="opacity: 0; display:none;" id="main-app">
+        
+        <!-- Main Header -->
+        <header class="glass-panel main-header">
+            <div class="logo-area">
+                <div class="logo">
+                    <svg viewBox="0 0 100 100" class="header-svg">
+                        <path d="M15 85 L15 35 L40 60 L60 30" fill="none" stroke="#004aad" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" />
+                        <path d="M40 85 L60 55 L85 85 L85 30" fill="none" stroke="#38bdf8" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                    <span class="logo-text"><span class="logo-split">Split</span><span class="logo-m">M</span></span>
+                </div>
+                <div class="active-group-info" style="display:flex; align-items:center; gap:10px;">
+                    <div>
+                        <span id="active-group-name">Mon Groupe</span>
+                        <small id="active-group-desc" class="group-desc"></small>
+                    </div>
+                    <button class="icon-btn-inside" onclick="app.shareInviteLink()" title="Invite People" style="padding:4px; font-size:1rem; opacity:0.8;"><i class="fa-solid fa-user-plus"></i></button>
+                </div>
+            </div>
+
+            <div class="header-controls" id="header-controls">
+                <div class="mobile-nav-toggle" onclick="app.toggleMobileNav()">
+                    <i class="fa-solid fa-chevron-up" id="mobile-nav-arrow"></i>
+                </div>
+
+                <!-- User Auth Area -->
+                <div id="auth-section" class="auth-pill-container">
+                    <div id="user-profile" style="display:none;">
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <img id="user-photo" src="" style="width:28px; height:28px; border-radius:50%; border:1px solid var(--primary);">
+                            <span id="user-name" style="font-size:0.85rem; font-weight:600;"></span>
+                        </div>
+                        <div style="display:flex; gap:10px; align-items:center;">
+                            <button id="mobile-import-btn" class="btn btn-secondary icon-btn" onclick="app.fetchGoogleContacts()" title="Import Contacts" style="padding:6px; font-size:1rem;"><i class="fa-brands fa-google"></i></button>
+                            <button class="icon-btn-inside" onclick="app.logout()" style="padding:0; font-size:1rem;" title="Logout"><i class="fa-solid fa-sign-out-alt"></i></button>
+                        </div>
+                    </div>
+                    <button id="login-btn" class="btn btn-google" onclick="app.login()">
+                        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" style="width:18px;">
+                        <span data-i18n="login">Login</span>
+                    </button>
+                </div>
+
+                <!-- Group Switcher -->
+                <select id="group-select" class="control-select" onchange="app.switchGroup()"></select>
+                <button class="btn btn-secondary icon-btn" onclick="app.openGroupModal()" aria-label="Settings" title="Group Settings"><i class="fa-solid fa-gear"></i></button>
+
+                <!-- Currency & Language -->
+                <select id="currency-select" class="control-select" onchange="app.changeCurrency()">
+                    <option value="FCFA">FCFA</option>
+                    <option value="€">EUR (€)</option>
+                    <option value="$">USD ($)</option>
+                    <option value="£">GBP (£)</option>
+                </select>
+                <select id="language-select" class="control-select" onchange="app.changeLanguage()">
+                    <option value="fr">FR</option>
+                    <option value="en">EN</option>
+                    <option value="pt">PT</option>
+                    <option value="ar">AR</option>
+                </select>
+                
+                <!-- Font Controls (Desktop only via CSS) -->
+                <div class="font-controls">
+                    <button class="btn btn-secondary" onclick="app.changeFontSize(-1)">A-</button>
+                    <button class="btn btn-secondary" onclick="app.changeFontSize(1)">A+</button>
+                    <button class="btn btn-secondary" onclick="app.toggleDarkMode()" id="theme-toggle-btn" aria-label="Toggle Dark Mode" title="Basculer thème"><i id="theme-toggle-icon" class="fa-solid fa-moon"></i></button>
+                </div>
+                
+                <button class="btn btn-primary header-add-btn" onclick="app.openExpenseModal()">
+                    <i class="fa-solid fa-circle-plus" style="font-size:1.2rem;"></i> <span data-i18n="new_expense">Nouvelle Dépense</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Budget Progress -->
+        <div id="budget-container" class="budget-container" style="display:none;">
+            <div class="budget-header">
+                <span data-i18n="budget">Budget</span>
+                <span id="budget-text">0 / 0</span>
+            </div>
+            <div class="budget-bar-bg">
+                <div id="budget-bar-fill" class="budget-bar-fill"></div>
+            </div>
+        </div>
+
+        <main class="dashboard-grid">
+            <div class="left-col">
+                <!-- Summary Section -->
+                <section class="glass-panel summary-section">
+                    <h2><i class="fa-solid fa-chart-pie"></i> <span data-i18n="overview">Vue d'ensemble</span></h2>
+                    <div class="summary-cards">
+                        <div class="card">
+                            <h3 data-i18n="total_expenses">Total des dépenses</h3>
+                            <p id="total-expenses" class="amount">0</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Insights Collapsible -->
+                    <details class="insights-panel">
+                        <summary><i class="fa-solid fa-lightbulb"></i> <span data-i18n="insights">Insights 📊</span></summary>
+                        <div class="insights-content" id="insights-content">
+                            <!-- Filled by JS -->
+                        </div>
+                    </details>
+
+                    <div class="charts-wrapper">
+                        <div class="chart-container">
+                            <canvas id="expenseChart"></canvas>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="categoryChart"></canvas>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="timelineChart"></canvas>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Settlements Section -->
+                <section class="glass-panel settlement-section">
+                    <div class="section-header">
+                        <h2><i class="fa-solid fa-handshake"></i> <span data-i18n="optimized_settlements">Remboursements Optimisés</span></h2>
+                        <div class="action-buttons">
+                            <button class="btn btn-secondary icon-btn" onclick="app.shareSettlements()"><i class="fa-solid fa-share-nodes"></i></button>
+                            <button class="btn btn-secondary icon-btn" onclick="window.print()"><i class="fa-solid fa-file-pdf"></i></button>
+                        </div>
+                    </div>
+                    <p class="subtitle" data-i18n="settlements_subtitle">Qui doit combien à qui</p>
+                    <ul id="settlements-list" class="settlements-list" aria-live="polite"></ul>
+                </section>
+            </div>
+
+            <div class="right-col">
+                <!-- Members Section -->
+                <section class="glass-panel members-section">
+                    <div class="section-header">
+                        <h2><i class="fa-solid fa-users"></i> <span data-i18n="group_members">Membres du groupe</span></h2>
+                        <div style="display:flex; gap:8px;">
+                            <button id="import-contacts-btn" class="btn btn-secondary icon-btn" onclick="app.fetchGoogleContacts()" title="Import from Google" style="display:none;"><i class="fa-brands fa-google"></i></button>
+                            <button class="btn btn-secondary icon-btn" onclick="app.generateQR()" title="QR Invite"><i class="fa-solid fa-qrcode"></i></button>
+                        </div>
+                    </div>
+                    
+                    <div class="add-member-form">
+                        <input type="text" id="new-member-name" data-i18n-placeholder="member_name_ph" placeholder="Nom du membre..." onkeypress="if(event.key==='Enter') app.addMember()">
+                        <select id="new-member-status" class="control-select">
+                            <option value="normal" data-i18n="status_normal">Normal (1x)</option>
+                            <option value="good" data-i18n="status_good">Aisé (1.5x)</option>
+                            <option value="difficult" data-i18n="status_difficult">Difficile (0.5x)</option>
+                        </select>
+                        <button class="btn btn-secondary btn-sm" onclick="app.addMember()" data-i18n="add">Ajouter</button>
+                    </div>
+                    <ul id="members-list" class="members-list"></ul>
+                </section>
+
+                <!-- Expenses History -->
+                <section class="glass-panel expenses-section">
+                    <div class="section-header">
+                        <h2><i class="fa-solid fa-receipt"></i> <span data-i18n="expense_history">Historique des dépenses</span></h2>
+                        <button class="btn btn-secondary" onclick="app.toggleTimeline()"><i class="fa-solid fa-timeline"></i> Timeline</button>
+                    </div>
+
+                    <!-- Filter & Search -->
+                    <div class="filter-bar">
+                        <div class="search-wrapper">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                            <input type="text" id="expense-search" data-i18n-placeholder="search_ph" placeholder="Rechercher..." oninput="app.filterExpenses()">
+                        </div>
+                        <div class="category-pills" id="category-filters">
+                            <span class="pill active" data-cat="all" onclick="app.setCategoryFilter('all')">Tout</span>
+                            <span class="pill" data-cat="Food" onclick="app.setCategoryFilter('Food')">🍔</span>
+                            <span class="pill" data-cat="Transport" onclick="app.setCategoryFilter('Transport')">🚗</span>
+                            <span class="pill" data-cat="Entertainment" onclick="app.setCategoryFilter('Entertainment')">🎬</span>
+                            <span class="pill" data-cat="Shopping" onclick="app.setCategoryFilter('Shopping')">🛍️</span>
+                            <span class="pill" data-cat="Other" onclick="app.setCategoryFilter('Other')">📝</span>
+                        </div>
+                    </div>
+
+                    <p id="expense-count" class="subtitle" style="margin-bottom:10px;"></p>
+                    <ul id="expenses-list" class="expenses-list"></ul>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- Onboarding Modal -->
+    <div id="onboarding-modal" class="modal">
+        <div class="modal-content glass-panel" style="max-height: 90vh; max-width: 520px;">
+            <div class="modal-header" style="justify-content: center; flex-direction: column; text-align: center;">
+                <svg viewBox="0 0 100 100" style="width: 60px; height: 60px; margin-bottom: 10px;">
+                    <path d="M15 85 L15 35 L40 60 L60 30" fill="none" stroke="#004aad" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" />
+                    <path d="M40 85 L60 55 L85 85 L85 30" fill="none" stroke="#38bdf8" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+                <h2 data-i18n="welcome_title">Bienvenue sur SplitM</h2>
+                <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 5px;" data-i18n="welcome_subtitle">Configurez votre groupe pour commencer.</p>
+            </div>
+            <div class="modal-body">
+
+                <!-- Step 1: Preferences -->
+                <div class="form-group" style="display:flex; gap:15px;">
+                    <div style="flex:1;">
+                        <label style="color:var(--text-muted); font-size:0.9rem; font-weight:600; margin-bottom:8px; display:block;">🌐 Langue / Language</label>
+                        <select id="onboarding-language-select" class="control-select" style="width:100%;" onchange="app.updateOnboardingLanguage()">
+                            <option value="fr">Français</option>
+                            <option value="en">English</option>
+                            <option value="pt">Português</option>
+                            <option value="ar">العربية</option>
+                        </select>
+                    </div>
+                    <div style="flex:1;">
+                        <label style="color:var(--text-muted); font-size:0.9rem; font-weight:600; margin-bottom:8px; display:block;">💱 Devise / Currency</label>
+                        <select id="onboarding-currency-select" class="control-select" style="width:100%;">
+                            <option value="FCFA">FCFA</option>
+                            <option value="€">EUR (€)</option>
+                            <option value="$">USD ($)</option>
+                            <option value="£">GBP (£)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Step 2: Group Name -->
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <label data-i18n="group_name" style="color:var(--text-muted); font-size:0.9rem; font-weight:600; margin-bottom:8px; display:block;">Nom du groupe</label>
+                    <div class="input-with-icon">
+                        <i class="fa-solid fa-users" style="padding: 0 15px; color: var(--text-muted);"></i>
+                        <input type="text" id="onboarding-group-name" value="Mon Groupe">
+                    </div>
+                </div>
+
+                <!-- Step 3: Members -->
+                <label style="color:var(--text-muted); font-size:0.9rem; font-weight:600; display:block; margin-bottom:8px;">👥 <span data-i18n="group_members">Membres du groupe</span></label>
+                <div style="display:flex; gap:8px; margin-bottom:4px;">
+                    <span style="flex:2; font-size:0.75rem; color:var(--text-muted); font-weight:600; padding-left:5px;" data-i18n="member_name_label">Nom</span>
+                    <span style="flex:1; font-size:0.75rem; color:var(--text-muted); font-weight:600; min-width:0;" data-i18n="financial_status_label">Situation financière</span>
+                    <span style="width:70px;"></span>
+                </div>
+                <div style="display:flex; gap:8px; margin-bottom:8px;">
+                    <input type="text" id="onboarding-member-name" data-i18n-placeholder="member_name_ph" placeholder="Nom du membre..." onkeypress="if(event.key==='Enter') app.addOnboardingMember()" style="flex:2;">
+                    <select id="onboarding-member-status" class="control-select" style="flex:1; min-width:0;">
+                        <option value="normal" data-i18n="status_normal">Normal (1x)</option>
+                        <option value="good" data-i18n="status_good">Aisé (1.5x)</option>
+                        <option value="difficult" data-i18n="status_difficult">Difficile (0.5x)</option>
+                    </select>
+                    <button class="btn btn-secondary btn-sm" onclick="app.addOnboardingMember()" data-i18n="add">Ajouter</button>
+                </div>
+                <ul id="onboarding-members-list" class="members-list" style="margin-bottom: 20px; max-height: 180px; overflow-y: auto;"></ul>
+                <p style="color:var(--text-muted); font-size:0.8rem; text-align:center;">⚡ <span data-i18n="onboarding_hint">Ajoutez au moins 1 membre pour continuer</span></p>
+            </div>
+            <div class="modal-footer" style="text-align: center;">
+                <button id="onboarding-start-btn" class="btn btn-primary" style="width: 100%; opacity: 0.5; pointer-events: none;" onclick="app.closeOnboardingModal()" data-i18n="start_app">Commencer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Group Settings / Export Modal -->
+    <div id="group-modal" class="modal">
+        <div class="modal-content glass-panel">
+            <div class="modal-header">
+                <h2 data-i18n="group_settings">Paramètres du groupe</h2>
+                <button class="close-btn" onclick="app.closeModal('group-modal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label data-i18n="group_name">Nom du groupe</label>
+                    <input type="text" id="group-name-input">
+                </div>
+                <div class="form-group">
+                    <label data-i18n="group_desc">Description / Voyage</label>
+                    <input type="text" id="group-desc-input" placeholder="Ex: Voyage Kribi 🏖️">
+                </div>
+                <div class="form-group">
+                    <label data-i18n="budget_limit">Budget Limite (Optionnel)</label>
+                    <input type="number" id="group-budget-input" min="0" placeholder="0">
+                </div>
+                
+                <hr style="border:0; border-top:1px solid var(--glass-border); margin:20px 0;">
+                
+                <h3 style="margin-bottom:15px;" data-i18n="data_management">Gestion des données</h3>
+                <p id="storage-usage" class="subtitle" style="margin-bottom:15px;"></p>
+                <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                    <button class="btn btn-secondary" onclick="app.exportData()"><i class="fa-solid fa-download"></i> <span data-i18n="export">Exporter (JSON)</span></button>
+                    <button class="btn btn-secondary" onclick="document.getElementById('import-file').click()"><i class="fa-solid fa-upload"></i> <span data-i18n="import">Importer</span></button>
+                    <input type="file" id="import-file" style="display:none;" accept=".json" onchange="app.importData(event)">
+                    <button class="btn btn-danger" style="padding:10px 20px; background:var(--danger); color:white; border-radius:8px;" onclick="app.resetData()"><i class="fa-solid fa-triangle-exclamation"></i> <span data-i18n="reset">Réinitialiser</span></button>
+                </div>
+                <div style="margin-top:20px;">
+                    <button class="btn btn-secondary" onclick="app.createNewGroup()" style="width:100%;"><i class="fa-solid fa-plus"></i> <span data-i18n="new_group">Créer un nouveau groupe</span></button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="app.saveGroupSettings()" data-i18n="save">Enregistrer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Member Detail Modal -->
+    <div id="member-modal" class="modal">
+        <div class="modal-content glass-panel">
+            <div class="modal-header">
+                <h2 id="member-modal-name">Member Name</h2>
+                <button class="close-btn" onclick="app.closeModal('member-modal')">&times;</button>
+            </div>
+            <div class="modal-body" id="member-modal-body">
+                <!-- Injected via JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- QR Code Modal -->
+    <div id="qr-modal" class="modal">
+        <div class="modal-content glass-panel" style="text-align:center; max-width: 400px; border: 1px solid var(--primary-light);">
+            <div class="modal-header">
+                <h2 style="font-size: 1.4rem;"><i class="fa-solid fa-qrcode"></i> <span data-i18n="invite_qr">Inviter via QR</span></h2>
+                <button class="close-btn" onclick="app.closeModal('qr-modal')">&times;</button>
+            </div>
+            <div class="modal-body" style="padding: 20px 0;">
+                <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 20px;" data-i18n="qr_instruction">Scannez ce code pour rejoindre le groupe.</p>
+                
+                <div id="qrcode-container" style="background: white; padding: 20px; border-radius: 15px; display: inline-block; box-shadow: 0 10px 25px rgba(0,0,0,0.1); margin-bottom: 20px;">
+                    <div id="qrcode-div"></div>
+                </div>
+
+                <div style="display: flex; gap: 10px; justify-content: center; margin-top: 10px;">
+                    <button class="btn btn-primary" onclick="app.shareInviteLink()" style="flex: 1;">
+                        <i class="fa-solid fa-link"></i> Lien
+                    </button>
+                    <button class="btn btn-secondary" onclick="app.downloadQR()" style="flex: 1;">
+                        <i class="fa-solid fa-download"></i> Image
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Google Contacts Modal -->
+    <div id="contacts-modal" class="modal">
+        <div class="modal-content glass-panel" style="max-width: 450px;">
+            <div class="modal-header">
+                <h2><i class="fa-brands fa-google"></i> Google Contacts</h2>
+                <button class="close-btn" onclick="app.closeModal('contacts-modal')">&times;</button>
+            </div>
+            <div class="modal-body" style="max-height: 400px; overflow-y: auto; padding: 10px;">
+                <div id="contacts-loader" style="text-align:center; padding:20px; display:none;">
+                    <i class="fa-solid fa-spinner fa-spin" style="font-size:2rem; color:var(--primary);"></i>
+                </div>
+                <div class="search-wrapper" style="margin-bottom: 15px;">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" id="contact-search" placeholder="Rechercher un contact..." oninput="app.filterContacts()">
+                </div>
+                <ul id="contacts-list" class="members-list"></ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Full Image Preview Modal -->
+    <div id="image-modal" class="modal" onclick="app.closeModal('image-modal')">
+        <div class="modal-content glass-panel" style="background:transparent; border:none; box-shadow:none; align-items:center;">
+            <img id="image-preview-full" src="" style="max-width:100%; max-height:80vh; border-radius:10px;">
+        </div>
+    </div>
+
+    <!-- Expense Modal -->
+    <div id="expense-modal" class="modal">
+        <div class="modal-content glass-panel">
+            <div class="modal-header">
+                <h2 id="modal-title" data-i18n="add_expense">Ajouter une dépense</h2>
+                <button class="close-btn" onclick="app.closeExpenseModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <!-- AI Magic Box -->
+                <div class="form-group ai-magic-container" style="background: rgba(56, 189, 248, 0.1); border: 1px dashed var(--primary); padding: 15px; border-radius: 12px; margin-bottom: 25px;">
+                    <label style="color:var(--primary); font-size:0.8rem; display:flex; align-items:center; gap:5px;">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> AI MAGIC BOX (Beta)
+                    </label>
+                    <div style="display:flex; gap:10px; margin-top:8px;">
+                        <input type="text" id="ai-magic-input" placeholder="Ex: 25€ for pizza last night" style="border:none; background:transparent; font-size:1rem; flex:1;">
+                        <button class="btn btn-primary btn-sm" onclick="app.processMagicInput()" style="border-radius:50%; width:36px; height:36px; padding:0; justify-content:center;">
+                            <i class="fa-solid fa-bolt"></i>
+                        </button>
+                    </div>
+                    <small style="opacity:0.7; font-size:0.7rem; display:block; margin-top:5px;">Tapez une phrase simple, l'IA remplira le reste !</small>
+                </div>
+
+                <input type="hidden" id="expense-id">
+                
+                <!-- Templates -->
+                <div class="expense-templates">
+                    <span class="pill" onclick="app.applyTemplate('🍕 Pizza', 'Food')">🍕 Pizza</span>
+                    <span class="pill" onclick="app.applyTemplate('🚕 Taxi', 'Transport')">🚕 Taxi</span>
+                    <span class="pill" onclick="app.applyTemplate('🏨 Hôtel', 'Other')">🏨 Hôtel</span>
+                    <span class="pill" onclick="app.applyTemplate('🛒 Courses', 'Shopping')">🛒 Courses</span>
+                    <span class="pill" onclick="app.applyTemplate('🎟️ Tickets', 'Entertainment')">🎟️ Tickets</span>
+                </div>
+
+                <div class="form-group">
+                    <label data-i18n="description">Description</label>
+                    <div class="input-with-icon">
+                        <input type="text" id="expense-desc" data-i18n-placeholder="desc_ph" placeholder="Ex: Restaurant..." onchange="app.checkDuplicate(); app.updateSplit()">
+                        <button class="icon-btn-inside" onclick="app.startVoiceInput()" title="Voice Input"><i class="fa-solid fa-microphone" id="mic-icon"></i></button>
+                    </div>
+                    <div id="duplicate-warning" class="error-text" style="display:none; color:var(--danger);">⚠️ <span data-i18n="duplicate_warn">Dépense similaire détectée.</span></div>
+                </div>
+
+                <div style="display:flex; gap:15px;">
+                    <div class="form-group" style="flex:2;">
+                        <label data-i18n="total_amount">Montant Total</label>
+                        <input type="number" id="expense-amount" min="0" step="0.01" onchange="app.checkDuplicate(); app.updateSplit()">
+                    </div>
+                    <div class="form-group" style="flex:1;">
+                        <label data-i18n="date">Date</label>
+                        <input type="date" id="expense-date" onchange="app.checkDuplicate()">
+                    </div>
+                </div>
+
+                <div style="display:flex; gap:15px;">
+                    <div class="form-group" style="flex:1;">
+                        <label data-i18n="payment_method">Méthode de paiement</label>
+                        <select id="expense-payment-method" class="control-select">
+                            <option value="card" data-i18n="card">💳 Carte Bancaire</option>
+                            <option value="cash" data-i18n="cash">💵 Espèces</option>
+                            <option value="transfer" data-i18n="transfer">🏦 Virement</option>
+                            <option value="mtn">📱 MTN Mobile Money</option>
+                            <option value="orange">📱 Orange Money</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="flex:1;">
+                        <label data-i18n="category">Catégorie</label>
+                        <select id="expense-category" class="control-select">
+                            <option value="Food" data-i18n="cat_food">🍔 Nourriture</option>
+                            <option value="Transport" data-i18n="cat_transport">🚗 Transport</option>
+                            <option value="Entertainment" data-i18n="cat_entertainment">🎬 Divertissement</option>
+                            <option value="Shopping" data-i18n="cat_shopping">🛍️ Shopping</option>
+                            <option value="Other" data-i18n="cat_other">📝 Autre</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Receipt Photo -->
+                <div class="form-group">
+                    <label data-i18n="receipt_photo">Reçu (Photo)</label>
+                    <input type="file" id="expense-receipt" accept="image/*" class="control-select" onchange="app.handleReceiptUpload(event)">
+                    <img id="receipt-preview" src="" style="display:none; max-width:100px; margin-top:10px; border-radius:8px; cursor:pointer;" onclick="app.showFullImage(this.src)">
+                    <input type="hidden" id="expense-receipt-base64">
+                </div>
+                
+                <!-- Who paid section -->
+                <div class="form-group">
+                    <label data-i18n="who_paid">Qui a payé ?</label>
+                    <div id="payers-container" class="custom-split-container" style="display:block;"></div>
+                    <div id="payers-error" class="error-text" style="display:none;" data-i18n="payers_error">La somme payée doit correspondre au total.</div>
+                </div>
+
+                <!-- How to split section -->
+                <div class="form-group">
+                    <label data-i18n="split_method">Répartition</label>
+                    <div class="split-options">
+                        <label><input type="radio" name="split-type" value="equal" checked onchange="app.updateSplit()"> <span data-i18n="split_equal">Équitable</span></label>
+                        <label><input type="radio" name="split-type" value="percent" onchange="app.updateSplit()"> <span data-i18n="split_percent">Pourcentage (%)</span></label>
+                        <label><input type="radio" name="split-type" value="custom" onchange="app.updateSplit()"> <span data-i18n="split_custom">Montant Exact</span></label>
+                        <label><input type="radio" name="split-type" value="proportional" onchange="app.updateSplit()"> <span data-i18n="split_proportional">Proportionnel</span></label>
+                    </div>
+                </div>
+                <div id="custom-split-container" class="custom-split-container" style="display:none;"></div>
+                <div id="split-error" class="error-text" style="display:none;" data-i18n="split_error">La somme des répartitions ne correspond pas au total.</div>
+
+                <!-- Comments -->
+                <div class="form-group" style="margin-top: 20px;">
+                    <label data-i18n="comments">Commentaires</label>
+                    <textarea id="expense-comments" class="control-select" style="width:100%; min-height:60px;" placeholder="..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="app.saveExpense()" data-i18n="save">Enregistrer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- PWA Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(registration => console.log('SW registered'))
+                    .catch(err => console.log('SW registration failed:', err));
+            });
+        }
+    </script>
+    <script src="app.js"></script>
+</body>
+</html>

@@ -386,14 +386,27 @@ const app = {
         // Setup keyboard navigation and touch events (called after DOM is ready)
         this.setupKeyboardNav();
 
-        // Initial Render
+        // Initial Render — skip charts since the app container is still hidden (display:none)
+        // Charts need a visible canvas to render; they will be triggered after the splash closes.
+        this._skipCharts = true;
         this.renderApp();
+        this._skipCharts = false;
 
         // Feature 24: SKELETON LOADING / Splash Screen
+        // Safety net: always dismiss splash after 3s even if something errors
+        const _dismissSplash = () => {
+            const splash = document.getElementById('splash-screen');
+            if (splash) { splash.style.opacity = '0'; splash.style.display = 'none'; }
+            const appMain = document.getElementById('main-app');
+            if (appMain) { appMain.style.display = 'block'; appMain.style.opacity = '1'; }
+        };
+        const _splashSafetyTimer = setTimeout(_dismissSplash, 3000);
+
         setTimeout(() => {
             const splash = document.getElementById('splash-screen');
             if (splash) splash.style.opacity = '0';
             setTimeout(() => {
+                clearTimeout(_splashSafetyTimer);
                 if (splash) splash.style.display = 'none';
                 const appMain = document.getElementById('main-app');
                 if (appMain) {
@@ -407,10 +420,11 @@ const app = {
                 if (langSel) langSel.value = state.settings.language;
                 if (currSel) currSel.value = state.settings.currency;
                 
-                // Recache just in case
+                // Recache DOM references now that main app is visible
                 this.cacheElements();
                 this.applySettings();
                 this.updateGroupSelect();
+                // Full render now that canvas elements are visible
                 this.renderApp();
                 this.setupTouchEvents();
 
@@ -420,7 +434,8 @@ const app = {
                     descInput.addEventListener('input', (e) => {
                         const predicted = this.predictCategory(e.target.value);
                         if (predicted !== 'Other') {
-                            document.getElementById('expense-category').value = predicted;
+                            const catEl = document.getElementById('expense-category');
+                            if (catEl) catEl.value = predicted;
                         }
                     });
                 }
@@ -850,7 +865,10 @@ const app = {
 
         this.renderMembers();
         this.renderExpenses();
-        this.updateCharts();
+        // Skip charts during the pre-splash hidden render to avoid Chart.js canvas errors
+        if (!this._skipCharts) {
+            this.updateCharts();
+        }
         this.renderSettlements();
         this.updateBudget();
         this.updateInsights();
@@ -1865,15 +1883,19 @@ const app = {
     },
 
     updateCharts() {
+        try {
         const group = getActiveGroup();
         const total = group.expenses.filter(e => !e.settled).reduce((sum, e) => sum + e.amount, 0);
         
-        const currentTotalText = document.getElementById('total-expenses').textContent;
-        const currentTotal = parseFloat(currentTotalText.replace(/[^0-9.-]+/g,"")) || 0;
-        this.animateValue('total-expenses', currentTotal, total, 600);
+        const totalEl = document.getElementById('total-expenses');
+        if (totalEl) {
+            const currentTotal = parseFloat(totalEl.textContent.replace(/[^0-9.-]+/g,'')) || 0;
+            this.animateValue('total-expenses', currentTotal, total, 600);
+        }
 
         // Hide charts wrapper when there's no data
-        const chartsWrapper = document.querySelector('.charts-wrapper');
+        const chartsWrapper = this.dom.chartsWrapper || document.querySelector('.charts-wrapper');
+        if (!chartsWrapper) return;
         if (group.expenses.filter(e => !e.settled).length === 0) {
             chartsWrapper.style.display = 'none';
             if (this.expenseChartInstance) { this.expenseChartInstance.destroy(); this.expenseChartInstance = null; }
@@ -1939,6 +1961,9 @@ const app = {
             data: { labels: dates.map(formatRelativeDate), datasets: [{ label: 'Total', data: cumData, borderColor: '#004aad', backgroundColor: gradient, fill: true, tension: 0.4 }] },
             options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: 'var(--glass-border)' } }, x: { grid: { display: false } } } }
         });
+        } catch (e) {
+            console.warn('SplitM: Chart render skipped (canvas not ready):', e.message);
+        }
     },
 
     // --- DATA MANAGEMENT ---

@@ -1,5 +1,22 @@
 // --- UTILITIES & CACHES ---
-import { debounce, createFragment, sanitizeHTML } from './utils.js';
+// Inlined to avoid ES module import issues (MIME type / server config)
+function debounce(func, wait) {
+    let timeout;
+    return function (...args) {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(this, args), wait);
+    };
+}
+function createFragment(html) {
+    const template = document.createElement('template');
+    template.innerHTML = html.trim();
+    return template.content;
+}
+function sanitizeHTML(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+}
 const generateId = () => '_' + Math.random().toString(36).substr(2, 9);
 
 const formattersCache = {};

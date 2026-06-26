@@ -1,18 +1,26 @@
-// --- UTILITIES ---
+// --- UTILITIES & CACHES ---
 import { debounce, createFragment, sanitizeHTML } from './utils.js';
 const generateId = () => '_' + Math.random().toString(36).substr(2, 9);
 
+const formattersCache = {};
+const getFormatter = (locale, currency) => {
+    const cacheKey = `${locale}_${currency}`;
+    if (!formattersCache[cacheKey]) {
+        const isFCFA = currency === 'FCFA';
+        formattersCache[cacheKey] = new Intl.NumberFormat(locale, {
+            style: 'currency',
+            currency: isFCFA ? 'XAF' : (currency === '€' ? 'EUR' : currency === '$' ? 'USD' : 'GBP'),
+            minimumFractionDigits: isFCFA ? 0 : 2,
+            maximumFractionDigits: isFCFA ? 0 : 2
+        });
+    }
+    return formattersCache[cacheKey];
+};
+
 const formatMoney = (amount) => {
     const currency = state.settings.currency;
-    const isFCFA = currency === 'FCFA';
-    
-    // Feature 5: NUMBER FORMATTING & Feature 42: LOCAL CURRENCY FORMATTING
-    return new Intl.NumberFormat(state.settings.language, {
-        style: 'currency',
-        currency: isFCFA ? 'XAF' : (currency === '€' ? 'EUR' : currency === '$' ? 'USD' : 'GBP'),
-        minimumFractionDigits: isFCFA ? 0 : 2,
-        maximumFractionDigits: isFCFA ? 0 : 2
-    }).format(amount).replace('XAF', 'FCFA');
+    const formatter = getFormatter(state.settings.language, currency);
+    return formatter.format(amount).replace('XAF', 'FCFA');
 };
 
 const formatRelativeDate = (dateString) => {
@@ -291,6 +299,20 @@ const app = {
     currentFilter: 'all',
     currentSearch: '',
     isTimelineView: false,
+    dom: {},
+
+    cacheElements() {
+        const ids = [
+            'total-expenses', 'members-list', 'expenses-list', 'settlements-list',
+            'insights-content', 'budget-container', 'budget-text', 'budget-bar-fill',
+            'active-group-name', 'active-group-desc'
+        ];
+        ids.forEach(id => {
+            this.dom[id] = document.getElementById(id);
+        });
+        this.dom.insightsPanel = document.querySelector('.insights-panel');
+        this.dom.chartsWrapper = document.querySelector('.charts-wrapper');
+    },
 
     toggleMobileNav() {
         const controls = document.getElementById('header-controls');
@@ -304,7 +326,13 @@ const app = {
         vibrate(30);
     },
 
+    /**
+     * Initializes the SplitM application, caches DOM elements, pre-fills Telegram WebApp details,
+     * checks offline status, and registers event listeners.
+     */
     init() {
+        // Cache DOM elements immediately as DOM is ready on DOMContentLoaded
+        this.cacheElements();
         loadState();
         
         // Feature 45: TELEGRAM INTEGRATION
@@ -318,6 +346,24 @@ const app = {
         window.addEventListener('online',  () => { if(_offlineBanner) _offlineBanner.style.display='none'; showToast('Connexion rétablie ✓', 'success'); });
         window.addEventListener('offline', () => { if(_offlineBanner) _offlineBanner.style.display='block'; });
         if(!navigator.onLine && _offlineBanner) _offlineBanner.style.display='block';
+
+        // Check if Firebase is missing
+        if (typeof firebase === 'undefined') {
+            const banner = document.getElementById('firebase-banner');
+            if (banner) {
+                banner.textContent = "Firebase SDK non chargé – fonctionnement en mode local hors-ligne.";
+                banner.style.display = 'block';
+            }
+        }
+
+        // Add toggle listener to insights details element to lazy-load charts
+        if (this.dom.insightsPanel) {
+            this.dom.insightsPanel.addEventListener('toggle', () => {
+                if (this.dom.insightsPanel.open) {
+                    this.updateCharts();
+                }
+            });
+        }
 
         this.applySettings();
         
@@ -361,6 +407,8 @@ const app = {
                 if (langSel) langSel.value = state.settings.language;
                 if (currSel) currSel.value = state.settings.currency;
                 
+                // Recache just in case
+                this.cacheElements();
                 this.applySettings();
                 this.updateGroupSelect();
                 this.renderApp();
@@ -527,6 +575,9 @@ const app = {
         reader.readAsDataURL(file);
     },
 
+    /**
+     * Adds a new member to the active group with an optional avatar and status-based weight.
+     */
     addMember() {
         const group = getActiveGroup();
         const input = document.getElementById('new-member-name');
@@ -553,8 +604,12 @@ const app = {
 
     generateQR() {
         const group = getActiveGroup();
-        const url = `${window.location.origin}${window.location.pathname}?invite=${group.id}`;
+        let url = `${window.location.origin}${window.location.pathname}?invite=${group.id}`;
+        if (!url.startsWith('https://') && !url.includes('localhost') && !url.includes('127.0.0.1')) {
+            url = url.replace('http://', 'https://');
+        }
         const container = document.getElementById('qrcode-div');
+        if (!container) return;
         container.innerHTML = '';
         if (typeof QRCode === 'undefined') {
             showToast('QR Code library not loaded', 'error');
@@ -784,11 +839,14 @@ const app = {
     },
 
     // --- RENDER APP ---
+    /**
+     * Core rendering function that updates the group info, members, expenses, settlements, budget, and insights.
+     */
     renderApp() {
         const group = getActiveGroup();
         
-        document.getElementById('active-group-name').textContent = group.name;
-        document.getElementById('active-group-desc').textContent = group.description || '';
+        if (this.dom['active-group-name']) this.dom['active-group-name'].textContent = group.name;
+        if (this.dom['active-group-desc']) this.dom['active-group-desc'].textContent = group.description || '';
 
         this.renderMembers();
         this.renderExpenses();
@@ -801,30 +859,33 @@ const app = {
     updateBudget() {
         // Feature 17: BUDGET LIMIT PER GROUP
         const group = getActiveGroup();
-        const container = document.getElementById('budget-container');
+        const container = this.dom['budget-container'] || document.getElementById('budget-container');
         if (!group.budget) {
-            container.style.display = 'none';
+            if (container) container.style.display = 'none';
             return;
         }
         
-        container.style.display = 'block';
+        if (container) container.style.display = 'block';
         const total = group.expenses.reduce((sum, e) => sum + e.amount, 0);
         const percent = Math.min(100, Math.round((total / group.budget) * 100));
         
-        document.getElementById('budget-text').textContent = `${formatMoney(total)} / ${formatMoney(group.budget)} (${percent}%)`;
+        const budgetText = this.dom['budget-text'] || document.getElementById('budget-text');
+        if (budgetText) budgetText.textContent = `${formatMoney(total)} / ${formatMoney(group.budget)} (${percent}%)`;
         
-        const fill = document.getElementById('budget-bar-fill');
-        fill.style.width = `${percent}%`;
-        
-        if (percent < 70) fill.style.backgroundColor = 'var(--success)';
-        else if (percent < 90) fill.style.backgroundColor = 'var(--warning)';
-        else fill.style.backgroundColor = 'var(--danger)';
+        const fill = this.dom['budget-bar-fill'] || document.getElementById('budget-bar-fill');
+        if (fill) {
+            fill.style.width = `${percent}%`;
+            if (percent < 70) fill.style.backgroundColor = 'var(--success)';
+            else if (percent < 90) fill.style.backgroundColor = 'var(--warning)';
+            else fill.style.backgroundColor = 'var(--danger)';
+        }
     },
 
     updateInsights() {
         // Feature 16: SPENDING INSIGHTS
         const group = getActiveGroup();
-        const content = document.getElementById('insights-content');
+        const content = this.dom['insights-content'] || document.getElementById('insights-content');
+        if (!content) return;
         if (group.expenses.length === 0) {
             content.innerHTML = '<p class="text-muted">Ajoutez des dépenses pour voir les insights.</p>';
             return;
@@ -849,8 +910,8 @@ const app = {
 
         const avg = formatMoney(total / group.expenses.length);
 
-        content.innerHTML = `
-            <div style="display:flex; justify-content:space-between; border-bottom:1px solid var(--glass-border); padding-bottom:5px;"><span>🥇 Plus gros dépenseur</span> <strong>${topSpenderName} (${formatMoney(topSpenderAmount)})</strong></div>
+        const insightsHTML = `
+            <div style="display:flex; justify-content:space-between; border-bottom:1px solid var(--glass-border); padding-bottom:5px;"><span>🥇 Plus gros dépenseur</span> <strong>${sanitizeHTML(topSpenderName)} (${formatMoney(topSpenderAmount)})</strong></div>
             <div style="display:flex; justify-content:space-between; border-bottom:1px solid var(--glass-border); padding-bottom:5px; margin-top:5px;"><span>📊 Catégorie reine</span> <strong>${dict[state.settings.language]['cat_'+topCat.toLowerCase()] || topCat} (${catPercent}%)</strong></div>
             <div style="display:flex; justify-content:space-between; margin-top:5px; margin-bottom:15px;"><span>💸 Moyenne par dépense</span> <strong>${avg}</strong></div>
             
@@ -861,12 +922,18 @@ const app = {
                 ${this.generateAIInsights()}
             </div>
         `;
+        content.innerHTML = '';
+        content.appendChild(createFragment(insightsHTML));
     },
 
     // --- MEMBERS ---
+    /**
+     * Computes member balances, identifies top spenders, and renders the member lists.
+     */
     renderMembers() {
         const group = getActiveGroup();
-        const list = document.getElementById('members-list');
+        const list = this.dom['members-list'] || document.getElementById('members-list');
+        if (!list) return;
         
         // Calculate Balances for Running Balance Feature (Feature 4)
         const balances = {};
@@ -886,7 +953,7 @@ const app = {
 
         const hasExpenses = group.expenses.length > 0;
 
-        list.innerHTML = group.members.map(m => {
+        const memberHTML = group.members.map(m => {
             const bal = balances[m.id];
             const threshold = state.settings.currency === 'FCFA' ? 0.5 : 0.005;
             const d = dict[state.settings.language];
@@ -913,12 +980,12 @@ const app = {
             return `
             <li class="list-item" onclick="app.openMemberModal('${m.id}')" style="cursor:pointer;">
                 <div class="member-info-col">
-            <div class="avatar" style="background:${getColor(m.name)}">
-                ${m.avatar ? `<img src="${m.avatar}" alt="${m.name}" style="width:100%; height:100%; border-radius:50%;"/>` : m.name.charAt(0).toUpperCase()}
-            </div>
+                    <div class="avatar" style="background:${getColor(m.name)}">
+                        ${m.avatar ? `<img src="${m.avatar}" alt="${sanitizeHTML(m.name)}" style="width:100%; height:100%; border-radius:50%;"/>` : sanitizeHTML(m.name.charAt(0).toUpperCase())}
+                    </div>
                     <div>
                         <div style="display:flex; align-items:center; flex-wrap:wrap; gap:2px;">
-                            <strong>${m.name} ${badge}</strong>${statusPill}
+                            <strong>${sanitizeHTML(m.name)} ${badge}</strong>${statusPill}
                         </div>
                         ${balText ? `<div style="margin-top:2px;">${balText}</div>` : ''}
                     </div>
@@ -927,30 +994,15 @@ const app = {
             </li>
         `}).join('');
 
+        list.innerHTML = '';
         if(group.members.length === 0) {
-            list.innerHTML = `<div class="empty-state">
+            const emptyHTML = `<div class="empty-state">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
                 <p>${dict[state.settings.language].no_members}</p>
             </div>`;
-        }
-    },
-
-    addMember() {
-        const group = getActiveGroup();
-        const input = document.getElementById('new-member-name');
-        const statusSelect = document.getElementById('new-member-status');
-        const name = input.value.trim();
-        
-        if (name) {
-            let weight = 1.0;
-            if (statusSelect.value === 'good') weight = 1.5;
-            if (statusSelect.value === 'difficult') weight = 0.5;
-            
-            group.members.push({ id: generateId(), name, status: statusSelect.value, weight });
-            input.value = '';
-            saveState();
-            this.renderApp();
-            vibrate(50);
+            list.appendChild(createFragment(emptyHTML));
+        } else {
+            list.appendChild(createFragment(memberHTML));
         }
     },
 
@@ -1005,32 +1057,42 @@ const app = {
         if(net > threshold) balColor = 'var(--success)';
         if(net < -threshold) balColor = 'var(--danger)';
 
-        document.getElementById('member-modal-name').textContent = `${d.member_details || 'Details'}: ${member.name}`;
-        document.getElementById('member-modal-body').innerHTML = `
-            <div class="summary-cards" style="margin-bottom:20px;">
-                <div class="card" style="padding:10px;"><h3 style="margin:0;">${d.paid_label}</h3><strong style="color:var(--success)">${formatMoney(paid)}</strong></div>
-                <div class="card" style="padding:10px;"><h3 style="margin:0;">${d.consumed_label}</h3><strong style="color:var(--danger)">${formatMoney(consumed)}</strong></div>
-            </div>
-            <div style="text-align:center; margin-bottom:20px;">
-                <h3 style="color:var(--text-muted); font-size:1rem;">${d.net_balance}</h3>
-                <h2 style="color:${balColor}; font-size:2rem; margin:0;">${net > 0 ? '+' : ''}${formatMoney(net)}</h2>
-            </div>
-            <h3 style="border-bottom:1px solid var(--glass-border); padding-bottom:5px; margin-bottom:10px;">${d.involved_expenses} (${involvedExp.length})</h3>
-            <ul class="expenses-list">
-                ${involvedExp.map(e => `<li class="list-item" style="padding:8px 10px;">
-                    <div><strong>${e.description}</strong><br><small>${formatRelativeDate(e.date)}</small></div>
-                    <strong>${formatMoney(e.amount)}</strong>
-                </li>`).join('')}
-            </ul>
-        `;
+        const nameEl = document.getElementById('member-modal-name');
+        if (nameEl) nameEl.textContent = `${d.member_details || 'Details'}: ${member.name}`;
+        
+        const bodyEl = document.getElementById('member-modal-body');
+        if (bodyEl) {
+            const modalBodyHTML = `
+                <div class="summary-cards" style="margin-bottom:20px;">
+                    <div class="card" style="padding:10px;"><h3 style="margin:0;">${d.paid_label}</h3><strong style="color:var(--success)">${formatMoney(paid)}</strong></div>
+                    <div class="card" style="padding:10px;"><h3 style="margin:0;">${d.consumed_label}</h3><strong style="color:var(--danger)">${formatMoney(consumed)}</strong></div>
+                </div>
+                <div style="text-align:center; margin-bottom:20px;">
+                    <h3 style="color:var(--text-muted); font-size:1rem;">${d.net_balance}</h3>
+                    <h2 style="color:${balColor}; font-size:2rem; margin:0;">${net > 0 ? '+' : ''}${formatMoney(net)}</h2>
+                </div>
+                <h3 style="border-bottom:1px solid var(--glass-border); padding-bottom:5px; margin-bottom:10px;">${d.involved_expenses} (${involvedExp.length})</h3>
+                <ul class="expenses-list">
+                    ${involvedExp.map(e => `<li class="list-item" style="padding:8px 10px;">
+                        <div><strong>${sanitizeHTML(e.description)}</strong><br><small>${formatRelativeDate(e.date)}</small></div>
+                        <strong>${formatMoney(e.amount)}</strong>
+                    </li>`).join('')}
+                </ul>
+            `;
+            bodyEl.innerHTML = '';
+            bodyEl.appendChild(createFragment(modalBodyHTML));
+        }
         document.getElementById('member-modal').classList.add('active');
     },
 
     // --- EXPENSES ---
-    filterExpenses() {
-        this.currentSearch = document.getElementById('expense-search').value.toLowerCase();
-        this.renderExpenses();
-    },
+    filterExpenses: debounce(function() {
+        const searchInput = document.getElementById('expense-search');
+        if (searchInput) {
+            this.currentSearch = searchInput.value.toLowerCase();
+            this.renderExpenses();
+        }
+    }, 300),
 
     setCategoryFilter(cat) {
         this.currentFilter = cat;
@@ -1043,9 +1105,13 @@ const app = {
         this.renderExpenses();
     },
 
+    /**
+     * Filters, sorts, and renders group expenses in standard list view or chronological timeline view.
+     */
     renderExpenses() {
         const group = getActiveGroup();
-        const list = document.getElementById('expenses-list');
+        const list = this.dom['expenses-list'] || document.getElementById('expenses-list');
+        if (!list) return;
         const d = dict[state.settings.language];
         
         let filtered = group.expenses.filter(e => {
@@ -1057,13 +1123,16 @@ const app = {
         // Feature 2: SORT BY DATE
         filtered.sort((a, b) => new Date(b.date) - new Date(a.date));
 
-        document.getElementById('expense-count').textContent = `${filtered.length} dépenses trouvées`;
+        const countEl = document.getElementById('expense-count');
+        if (countEl) countEl.textContent = `${filtered.length} dépenses trouvées`;
 
+        list.innerHTML = '';
         if (filtered.length === 0) {
-            list.innerHTML = `<div class="empty-state">
+            const emptyHTML = `<div class="empty-state">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
                 <p>${dict[state.settings.language].no_expenses}</p>
             </div>`;
+            list.appendChild(createFragment(emptyHTML));
             return;
         }
 
@@ -1080,7 +1149,7 @@ const app = {
                 html += `
                     <li class="list-item" onclick="app.editExpense('${e.id}')" style="cursor:pointer; margin-bottom:10px;">
                         <div class="expense-info">
-                            <strong>${e.category === 'Food' ? '🍔 ' : e.category === 'Transport' ? '🚗 ' : ''}${e.description}</strong>
+                            <strong>${e.category === 'Food' ? '🍔 ' : e.category === 'Transport' ? '🚗 ' : ''}${sanitizeHTML(e.description)}</strong>
                             <small>${d.paid_by.replace('{name}', payerName)}</small>
                         </div>
                         <div class="expense-amount">${formatMoney(e.amount)}</div>
@@ -1088,10 +1157,10 @@ const app = {
                 `;
             });
             html += '</div>';
-            list.innerHTML = html;
+            list.appendChild(createFragment(html));
         } else {
             // Feature 12: Swipe to Delete list
-            list.innerHTML = filtered.map(e => {
+            const expensesHTML = filtered.map(e => {
                 const payerName = group.members.find(m => m.id === e.payers[0].memberId)?.name || 'Inconnu';
                 const hasReceipt = e.receiptBase64 ? `<i class="fa-solid fa-image" style="color:var(--primary); margin-left:5px;"></i>` : '';
                 const hasComments = e.comments ? `<i class="fa-regular fa-comment" style="color:var(--primary); margin-left:5px;"></i>` : '';
@@ -1101,7 +1170,7 @@ const app = {
                     <div class="swipe-bg"><i class="fa-solid fa-trash"></i></div>
                     <div class="list-item swipe-content" onclick="app.editExpense('${e.id}')" style="cursor:pointer;">
                         <div class="expense-info">
-                            <strong>${e.description} ${hasReceipt} ${hasComments}</strong>
+                            <strong>${sanitizeHTML(e.description)} ${hasReceipt} ${hasComments}</strong>
                             <small>${d.paid_by.replace('{name}', payerName)} <span class="date-badge">${formatRelativeDate(e.date)}</span></small>
                         </div>
                         <div style="display:flex; align-items:center; gap:10px;">
@@ -1110,6 +1179,7 @@ const app = {
                     </div>
                 </li>
             `}).join('');
+            list.appendChild(createFragment(expensesHTML));
         }
     },
 
@@ -1286,6 +1356,11 @@ const app = {
     handleReceiptUpload(e) {
         const file = e.target.files[0];
         if(!file) return;
+        // MIME type check – only allow images for receipts
+        if (!file.type.startsWith('image/')) {
+            showToast('Seul les images sont autorisées pour le reçu.', 'error');
+            return;
+        }
         
         showToast("Analyse par l'IA...", "info");
         const reader = new FileReader();
@@ -1662,10 +1737,14 @@ const app = {
         return settlements;
     },
 
+    /**
+     * Computes the optimized transaction matrix to settle all debts and renders the settlement checklist.
+     */
     renderSettlements() {
         const group = getActiveGroup();
         const settlements = this.calculateSettlements();
-        const list = document.getElementById('settlements-list');
+        const list = this.dom['settlements-list'] || document.getElementById('settlements-list');
+        if (!list) return;
         const d = dict[state.settings.language];
 
         // Feature 21: CONFETTI CELEBRATION
@@ -1674,30 +1753,34 @@ const app = {
                 confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, colors: ['#004aad', '#38bdf8'] });
                 window.confettiFired = true;
             }
-            list.innerHTML = `<div class="empty-state">
+            list.innerHTML = '';
+            const celebrationHTML = `<div class="empty-state">
                 <svg viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
                 <h3 style="color:var(--success)">Tout est réglé ! 🎉</h3>
             </div>`;
+            list.appendChild(createFragment(celebrationHTML));
             return;
         }
         window.confettiFired = false;
 
         if (settlements.length === 0) {
-            list.innerHTML = `<div class="empty-state">
+            list.innerHTML = '';
+            const emptyHTML = `<div class="empty-state">
                 <p>Aucun remboursement nécessaire.</p>
             </div>`;
+            list.appendChild(createFragment(emptyHTML));
             return;
         }
 
-        list.innerHTML = settlements.map((s, index) => {
-            const fromName = group.members.find(m => m.id === s.from)?.name;
-            const toName = group.members.find(m => m.id === s.to)?.name;
+        const settlementsHTML = settlements.map((s, index) => {
+            const fromName = group.members.find(m => m.id === s.from)?.name || 'Inconnu';
+            const toName = group.members.find(m => m.id === s.to)?.name || 'Inconnu';
             return `
             <li class="settlement-item" id="settle-${index}">
                 <div style="display:flex; align-items:center; gap:10px; flex:1;">
                     <i class="fa-solid fa-arrow-right-arrow-left"></i>
                     <div style="flex:1;">
-                        <strong>${fromName}</strong> <span style="color:var(--text-muted)">${d.owes}</span> <strong>${toName}</strong>
+                        <strong>${sanitizeHTML(fromName)}</strong> <span style="color:var(--text-muted)">${d.owes}</span> <strong>${sanitizeHTML(toName)}</strong>
                     </div>
                 </div>
                 <div style="display:flex; align-items:center; gap:15px;">
@@ -1706,6 +1789,9 @@ const app = {
                 </div>
             </li>
         `}).join('');
+
+        list.innerHTML = '';
+        list.appendChild(createFragment(settlementsHTML));
     },
 
     markSettled(fromId, toId, amount, index) {
@@ -1978,31 +2064,37 @@ const app = {
     _renderOnboardingMembers() {
         const list = document.getElementById('onboarding-members-list');
         const startBtn = document.getElementById('onboarding-start-btn');
+        if (!list) return;
         const d = dict[state.settings.language] || dict.fr;
         const statusStyles = {
             good:      { bg: 'rgba(16,185,129,0.15)', color: '#10b981', icon: '💰', label: d.status_good      || 'Well-off'  },
             normal:    { bg: 'rgba(148,163,184,0.12)', color: '#94a3b8', icon: '⚪️', label: d.status_normal || 'Normal'    },
             difficult: { bg: 'rgba(239,68,68,0.12)',  color: '#ef4444', icon: '💸', label: d.status_difficult || 'Tight'    }
         };
-        list.innerHTML = this._onboardingMembers.map(m => {
+        const onboardingHTML = this._onboardingMembers.map(m => {
             const ss = statusStyles[m.status] || statusStyles.normal;
             return `
             <li class="list-item" style="padding: 8px 15px;">
                 <span style="display:flex; align-items:center; gap:8px;">
                     <div class="avatar" style="background:${getColor(m.name)}; display:inline-flex; width:30px; height:30px; font-size:0.9rem;">${m.name.charAt(0).toUpperCase()}</div>
-                    <strong>${m.name}</strong>
+                    <strong>${sanitizeHTML(m.name)}</strong>
                     <span style="background:${ss.bg}; color:${ss.color}; font-size:0.72rem; padding:2px 8px; border-radius:10px;">${ss.icon} ${ss.label}</span>
                 </span>
-                <button class="btn-danger" onclick="app.removeOnboardingMember('${m.name}')"><i class="fa-solid fa-xmark"></i></button>
+                <button class="btn-danger" onclick="app.removeOnboardingMember('${m.name.replace(/'/g, "\\'")}')"><i class="fa-solid fa-xmark"></i></button>
             </li>
         `}).join('');
 
-        if (this._onboardingMembers.length >= 1) {
-            startBtn.style.opacity = '1';
-            startBtn.style.pointerEvents = 'auto';
-        } else {
-            startBtn.style.opacity = '0.5';
-            startBtn.style.pointerEvents = 'none';
+        list.innerHTML = '';
+        list.appendChild(createFragment(onboardingHTML));
+
+        if (startBtn) {
+            if (this._onboardingMembers.length >= 1) {
+                startBtn.style.opacity = '1';
+                startBtn.style.pointerEvents = 'auto';
+            } else {
+                startBtn.style.opacity = '0.5';
+                startBtn.style.pointerEvents = 'none';
+            }
         }
     },
 

@@ -199,6 +199,11 @@
                             <option value="good" data-i18n="status_good">Aisé (1.5x)</option>
                             <option value="difficult" data-i18n="status_difficult">Difficile (0.5x)</option>
                         </select>
+                        <!-- New avatar upload -->
+                        <input type="file" accept="image/*" id="new-member-avatar" title="Photo du membre" style="display:none;" onchange="app.previewMemberAvatar(event)">
+                        <label for="new-member-avatar" class="btn btn-secondary btn-sm" title="Ajouter une photo" style="margin-left:5px;">
+                            <i class="fa-solid fa-camera"></i>
+                        </label>
                         <button class="btn btn-secondary btn-sm" onclick="app.addMember()" data-i18n="add">Ajouter</button>
                     </div>
                     <ul id="members-list" class="members-list"></ul>

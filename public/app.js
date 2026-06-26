@@ -495,16 +495,42 @@ const app = {
         this.renderContactsList(filtered);
     },
 
-    addContactAsMember(name) {
-        const group = getActiveGroup();
-        group.members.push({ id: generateId(), name, status: 'normal', weight: 1.0 });
-        saveState();
-        this.renderApp();
-        this.fetchGoogleContacts(); // Refresh list to show "Already member"
-        showToast(`${name} ajouté !`, "success");
+    previewMemberAvatar(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            // Store base64 data temporarily for the next addMember call
+            this._newMemberAvatar = e.target.result;
+            // Show a quick toast to indicate preview loaded
+            showToast('Photo du membre chargée', 'info');
+        };
+        reader.readAsDataURL(file);
     },
 
-    generateQR() {
+    addMember() {
+        const group = getActiveGroup();
+        const input = document.getElementById('new-member-name');
+        const statusSelect = document.getElementById('new-member-status');
+        const name = input.value.trim();
+        
+        if (name) {
+            let weight = 1.0;
+            if (statusSelect.value === 'good') weight = 1.5;
+            if (statusSelect.value === 'difficult') weight = 0.5;
+            
+            const newMember = { id: generateId(), name, status: statusSelect.value, weight };
+            if (this._newMemberAvatar) {
+                newMember.avatar = this._newMemberAvatar;
+                this._newMemberAvatar = null; // reset after use
+            }
+            group.members.push(newMember);
+            input.value = '';
+            saveState();
+            this.renderApp();
+            vibrate(50);
+        }
+    },
         const group = getActiveGroup();
         const url = `${window.location.origin}${window.location.pathname}?invite=${group.id}`;
         const container = document.getElementById('qrcode-div');
@@ -851,7 +877,9 @@ const app = {
             return `
             <li class="list-item" onclick="app.openMemberModal('${m.id}')" style="cursor:pointer;">
                 <div class="member-info-col">
-                    <div class="avatar" style="background:${getColor(m.name)}">${m.name.charAt(0).toUpperCase()}</div>
+            <div class="avatar" style="background:${getColor(m.name)}">
+                ${m.avatar ? `<img src="${m.avatar}" alt="${m.name}" style="width:100%; height:100%; border-radius:50%;"/>` : m.name.charAt(0).toUpperCase()}
+            </div>
                     <div>
                         <div style="display:flex; align-items:center; flex-wrap:wrap; gap:2px;">
                             <strong>${m.name} ${badge}</strong>${statusPill}

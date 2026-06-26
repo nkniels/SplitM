@@ -27,7 +27,7 @@ To make this repository accessible to your brother and activate the automatic Fi
 
 ### 1. Create a Repository on GitHub
 1. Go to your [GitHub account](https://github.com/) and create a new repository.
-2. Name it **`group-expense-app`**.
+2. Name it **`SplitM`**.
 3. Keep it **Private** (recommended) or Public.
 4. **Do not** check any boxes to initialize with README, `.gitignore`, or License (we have already created the files locally).
 
@@ -49,10 +49,10 @@ Generate a token that lets GitHub push changes to your Firebase project:
 6. Click **Add secret**.
 
 ### 4. Link and Push Your Local Repository
-Open a terminal in your workspace directory (`c:\Users\DELL.ST\.gemini\antigravity\scratch\group-expense-app`) and run:
+Open a terminal in your workspace directory (`c:\Users\DELL.ST\.gemini\antigravity\scratch\SplitM`) and run:
 ```bash
 # Link the local repository to your remote GitHub repository
-git remote add origin https://github.com/YOUR_GITHUB_USERNAME/group-expense-app.git
+git remote add origin https://github.com/YOUR_GITHUB_USERNAME/SplitM.git
 
 # Push the main branch to GitHub
 git push -u origin main
@@ -66,7 +66,7 @@ git push -u origin main
 Once the push is complete, you can invite your brother as a collaborator on the GitHub repository. He can:
 1. **Clone the Repo**:
    ```bash
-   git clone https://github.com/YOUR_GITHUB_USERNAME/group-expense-app.git
+   git clone https://github.com/YOUR_GITHUB_USERNAME/SplitM.git
    ```
 2. **Make Changes and Prompt the AI**:
    - He can open the workspace in his IDE and use his local AI coding assistant (like Antigravity) to edit code.

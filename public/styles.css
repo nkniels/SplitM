@@ -428,3 +428,76 @@ input[type="text"], input[type="number"], input[type="date"], select, textarea {
     section { margin-bottom: 20px; page-break-inside: avoid; }
     #timelineChart, #expenseChart, #categoryChart { max-width: 500px; margin: 0 auto; }
 }
+
+/* ─── Missing utility classes ──────────────────────────────────── */
+
+/* Control select — used across header, modals, forms */
+.control-select {
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--input-border);
+    background: var(--input-bg);
+    color: var(--text-main);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: border-color 0.2s;
+}
+.control-select:focus { outline: none; border-color: var(--primary); }
+
+/* Add-member form row */
+.add-member-form {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+}
+.add-member-form input[type="text"] {
+    flex: 1 1 140px;
+    min-width: 0;
+}
+.add-member-form .control-select {
+    flex: 0 1 auto;
+}
+
+/* Skeleton loader shimmer */
+.skeleton-loader {
+    background: linear-gradient(90deg, var(--input-bg) 25%, var(--input-border) 50%, var(--input-bg) 75%);
+    background-size: 400% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 8px;
+}
+
+/* AI magic box container */
+.ai-magic-container { transition: box-shadow 0.2s; }
+.ai-magic-container:hover { box-shadow: 0 0 0 2px var(--primary); }
+
+/* ─── LAPTOP / DESKTOP  ≥ 1025px ──────────────────────────────── */
+@media (min-width: 1025px) {
+    .app-container { max-width: 1280px; padding: 30px 40px; }
+    .main-header { padding: 22px 36px; margin-bottom: 32px; }
+    .dashboard-grid { grid-template-columns: 1fr 1fr; gap: 32px; }
+    section { padding: 28px; }
+
+    /* Keep header controls in a single flexible row */
+    .header-controls {
+        display: flex;
+        flex-wrap: nowrap;
+        gap: 12px;
+        align-items: center;
+    }
+    .mobile-nav-toggle { display: none; }
+
+    /* Larger charts on desktop */
+    .chart-container { height: 280px; }
+
+    /* Auth section */
+    .auth-pill-container { display: flex; align-items: center; gap: 10px; }
+
+    /* Better summary cards spacing */
+    .summary-cards { gap: 24px; }
+    .card { padding: 24px; }
+    .card .amount { font-size: 2.2rem; }
+}
+

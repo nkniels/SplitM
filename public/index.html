@@ -24,7 +24,14 @@
 </head>
 <body>
     <!-- Indicators & Toasts -->
-    <div id="offline-banner" class="offline-banner" style="display:none;" data-i18n="offline_banner">Hors ligne — données locales</div>
+    <!-- Firebase Configuration Banner (hidden by default) -->
+    <div id="firebase-banner" style="display:none; background:#ffefc5; color:#8a6b3b; padding:10px; text-align:center;" data-i18n="firebase_missing">
+        Firebase configuration missing – operating in offline mode.
+    </div>
+    <!-- Offline Banner -->
+    <div id="offline-banner" style="display:none; background:#ef4444; color:#fff; padding:8px; text-align:center; font-size:0.85rem; font-weight:600;">
+        <i class="fa-solid fa-wifi" style="margin-right:6px;"></i><span data-i18n="offline_banner">Hors ligne — données locales</span>
+    </div>
     <div id="auto-save-indicator" class="auto-save-indicator"><i class="fa-solid fa-cloud-arrow-up"></i> <span data-i18n="saved">Sauvegardé ✓</span></div>
     <div id="toast-container" class="toast-container"></div>
 
@@ -541,6 +548,6 @@
             });
         }
     </script>
-    <script src="app.js"></script>
+    <script type="module" src="app.js"></script>
 </body>
 </html>

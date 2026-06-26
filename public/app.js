@@ -1,4 +1,5 @@
 // --- UTILITIES ---
+import { debounce, createFragment, sanitizeHTML } from './utils.js';
 const generateId = () => '_' + Math.random().toString(36).substr(2, 9);
 
 const formatMoney = (amount) => {
@@ -266,11 +267,18 @@ const firebaseConfig = {
     measurementId: "G-K6Y9M1XXP1"
 };
 
-// Initialize Firebase
+// Initialize Firebase safely
 if (typeof firebase !== 'undefined') {
-    firebase.initializeApp(firebaseConfig);
-    var db = firebase.firestore();
-    var auth = firebase.auth();
+    try {
+        firebase.initializeApp(firebaseConfig);
+        var db = firebase.firestore();
+        var auth = firebase.auth();
+    } catch (e) {
+        console.error('Firebase initialization failed:', e);
+        // Show fallback banner if placeholder config detected
+        const banner = document.getElementById('firebase-banner');
+        if (banner) banner.style.display = 'block';
+    }
 }
 
 const app = {
@@ -306,9 +314,10 @@ const app = {
         }
 
         // Feature 37: OFFLINE INDICATOR
-        window.addEventListener('online',  () => { document.getElementById('offline-banner').style.display='none'; showToast('Connexion rétablie ✓', 'success'); });
-        window.addEventListener('offline', () => { document.getElementById('offline-banner').style.display='block'; });
-        if(!navigator.onLine) document.getElementById('offline-banner').style.display='block';
+        const _offlineBanner = document.getElementById('offline-banner');
+        window.addEventListener('online',  () => { if(_offlineBanner) _offlineBanner.style.display='none'; showToast('Connexion rétablie ✓', 'success'); });
+        window.addEventListener('offline', () => { if(_offlineBanner) _offlineBanner.style.display='block'; });
+        if(!navigator.onLine && _offlineBanner) _offlineBanner.style.display='block';
 
         this.applySettings();
         
@@ -327,6 +336,9 @@ const app = {
 
         // Check for Invitation in URL
         this.handleInvitation();
+
+        // Setup keyboard navigation and touch events (called after DOM is ready)
+        this.setupKeyboardNav();
 
         // Initial Render
         this.renderApp();
@@ -352,6 +364,7 @@ const app = {
                 this.applySettings();
                 this.updateGroupSelect();
                 this.renderApp();
+                this.setupTouchEvents();
 
                 // Feature: SMART CATEGORY AUTO-FILL ON TYPE
                 const descInput = document.getElementById('expense-desc');
@@ -487,17 +500,23 @@ const app = {
         }
     },
 
-    filterContacts() {
+    // Debounced search for contacts
+    filterContacts: debounce(function() {
         const query = document.getElementById('contact-search').value.toLowerCase();
-        const filtered = this._googleContacts.filter(c => 
+        const filtered = this._googleContacts.filter(c =>
             (c.names?.[0]?.displayName || '').toLowerCase().includes(query)
         );
         this.renderContactsList(filtered);
-    },
+    }, 300),
 
     previewMemberAvatar(event) {
         const file = event.target.files[0];
         if (!file) return;
+        // MIME type check – only allow images
+        if (!file.type.startsWith('image/')) {
+            showToast('Seul les images sont autorisées pour l\'avatar.', 'error');
+            return;
+        }
         const reader = new FileReader();
         reader.onload = (e) => {
             // Store base64 data temporarily for the next addMember call
@@ -531,11 +550,16 @@ const app = {
             vibrate(50);
         }
     },
+
+    generateQR() {
         const group = getActiveGroup();
         const url = `${window.location.origin}${window.location.pathname}?invite=${group.id}`;
         const container = document.getElementById('qrcode-div');
         container.innerHTML = '';
-        
+        if (typeof QRCode === 'undefined') {
+            showToast('QR Code library not loaded', 'error');
+            return;
+        }
         new QRCode(container, {
             text: url,
             width: 200,
@@ -544,8 +568,20 @@ const app = {
             colorLight: "#ffffff",
             correctLevel: QRCode.CorrectLevel.H
         });
-        
         document.getElementById('qr-modal').classList.add('active');
+    },
+
+    addContactAsMember(name) {
+        const group = getActiveGroup();
+        if (group.members.some(m => m.name === name)) {
+            showToast('Ce contact est déjà un membre.', 'info');
+            return;
+        }
+        group.members.push({ id: generateId(), name, status: 'normal', weight: 1.0 });
+        saveState();
+        this.renderApp();
+        this.closeModal('contacts-modal');
+        showToast(`${name} ajouté au groupe !`, 'success');
     },
 
     downloadQR() {
@@ -710,11 +746,11 @@ const app = {
         select.value = state.activeGroupId;
     },
 
-    switchGroup() {
+    switchGroup: debounce(function() {
         state.activeGroupId = document.getElementById('group-select').value;
         saveState();
         this.renderApp();
-    },
+    }, 200),
 
     openGroupModal() {
         const group = getActiveGroup();

@@ -2147,5 +2147,9 @@ const app = {
     },
 };
 
+// Expose app globally so HTML onclick="app.xxx()" handlers work from ES module scope
+window.app = app;
+window.showToast = showToast;
+
 // Start
 document.addEventListener('DOMContentLoaded', () => app.init());

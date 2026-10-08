@@ -7,9 +7,10 @@ import type { RootState } from '../../core/store/store';
 export const loadGroups = createAsyncThunk(
   'groups/loadGroups',
   async (_, { dispatch, getState }) => {
-    const groups = await loadGroupsFromIDB();
-    dispatch(setGroups(groups));
     const state = getState() as RootState;
+    const userId = state.auth.user?.uid;
+    const groups = await loadGroupsFromIDB(userId);
+    dispatch(setGroups(groups));
     if (!state.groups.activeGroupId && groups.length > 0) {
       dispatch(setActiveGroup(groups[0].id));
       // Also load members for the first group
@@ -17,6 +18,15 @@ export const loadGroups = createAsyncThunk(
       dispatch(setMembers(members));
     }
     return groups;
+  }
+);
+
+export const loadMembersThunk = createAsyncThunk(
+  'groups/loadMembers',
+  async (groupId: string, { dispatch }) => {
+    const members = await loadMembersForGroup(groupId);
+    dispatch(setMembers(members));
+    return members;
   }
 );
 

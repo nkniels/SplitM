@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { PlusCircle, Users } from 'lucide-react';
 import type { RootState, AppDispatch } from '../core/store/store';
-import { loadGroups } from '../modules/groups/group.thunks';
+import { loadGroups, loadMembersThunk } from '../modules/groups/group.thunks';
 import { loadExpenses } from '../modules/expenses/expense.thunks';
 import { ExpenseList } from '../components/expenses/ExpenseList';
 import { ExpenseForm } from '../components/expenses/ExpenseForm';
@@ -10,6 +10,7 @@ import GroupForm from '../components/groups/GroupForm';
 import MembersPanel from '../components/groups/MembersPanel';
 import { SettlementsView } from '../components/settlements/SettlementsView';
 import { Button } from '../components/ui/Button';
+import { cn } from '../core/utils/helpers';
 
 export default function DashboardPage() {
   const dispatch = useDispatch<AppDispatch>();
@@ -27,10 +28,11 @@ export default function DashboardPage() {
     void dispatch(loadGroups());
   }, [dispatch]);
 
-  // When active group changes, load its expenses
+  // When active group changes, load its expenses and members
   useEffect(() => {
     if (activeGroupId) {
       void dispatch(loadExpenses(activeGroupId));
+      void dispatch(loadMembersThunk(activeGroupId));
     }
   }, [dispatch, activeGroupId]);
 
@@ -40,6 +42,18 @@ export default function DashboardPage() {
     : [];
 
   const hasGroups = Object.keys(groups).length > 0;
+
+  // Budget tracking
+  const expenses = useSelector((state: RootState) => state.expenses.expenses);
+  const totalSpent = useMemo(() => {
+    if (!activeGroupId) return 0;
+    return Object.values(expenses)
+      .filter(e => e.groupId === activeGroupId && !e.settled)
+      .reduce((sum, e) => sum + e.amount, 0);
+  }, [expenses, activeGroupId]);
+  const budget = activeGroup?.budget ?? 0;
+  const budgetPct = budget > 0 ? Math.min((totalSpent / budget) * 100, 100) : 0;
+  const overBudget = budget > 0 && totalSpent > budget;
 
   return (
     <div className="space-y-6">
@@ -76,6 +90,30 @@ export default function DashboardPage() {
           )}
         </div>
       </div>
+
+      {/* Budget indicator */}
+      {activeGroup && budget > 0 && (
+        <div className="bg-surface border border-slate-700 rounded-lg px-4 py-3">
+          <div className="flex justify-between items-center mb-1.5">
+            <span className="text-xs text-slate-400 font-medium uppercase tracking-wide">Budget</span>
+            <span className={cn('text-xs font-semibold', overBudget ? 'text-danger' : 'text-slate-300')}>
+              {activeGroup.currency} {totalSpent.toFixed(2)} / {budget.toFixed(2)}
+              {overBudget && ' — over budget!'}
+            </span>
+          </div>
+          <div className="h-1.5 bg-slate-700 rounded-full overflow-hidden">
+            <div
+              className={cn('h-full rounded-full transition-all duration-500', overBudget ? 'bg-danger' : 'bg-primary')}
+              style={{ width: `${budgetPct}%` }}
+              role="progressbar"
+              aria-valuenow={Math.round(budgetPct)}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-label={`${Math.round(budgetPct)}% of budget used`}
+            />
+          </div>
+        </div>
+      )}
 
       {/* No groups state */}
       {!hasGroups && (

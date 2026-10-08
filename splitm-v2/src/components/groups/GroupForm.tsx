@@ -20,6 +20,7 @@ export default function GroupForm({ onClose }: GroupFormProps) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [currency, setCurrency] = useState('USD');
+  const [budget, setBudget] = useState('');
   const [nameError, setNameError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -41,6 +42,7 @@ export default function GroupForm({ onClose }: GroupFormProps) {
           name: name.trim(),
           description: description.trim(),
           currency: currency.trim() || 'USD',
+          budget: budget ? parseFloat(budget) : 0,
           createdBy: user.uid,
         })
       ).unwrap();
@@ -76,6 +78,15 @@ export default function GroupForm({ onClose }: GroupFormProps) {
           placeholder="USD"
           value={currency}
           onChange={(e) => setCurrency(e.target.value)}
+        />
+        <Input
+          label="Budget (optional)"
+          type="number"
+          placeholder="0 — leave blank for no budget"
+          value={budget}
+          onChange={(e) => setBudget(e.target.value)}
+          min="0"
+          step="0.01"
         />
         <div className="flex justify-end gap-3 pt-2">
           <Button type="button" variant="ghost" onClick={onClose} disabled={isSubmitting}>

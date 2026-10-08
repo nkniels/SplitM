@@ -4,11 +4,12 @@ import { useDispatch } from 'react-redux';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from './core/config/firebase';
 import { setUser, setAuthLoading } from './modules/auth/auth.slice';
+import AuthGuard from './components/layout/AuthGuard';
 
 // Lazy loading route components for code splitting
 const DashboardPage = lazy(() => import('./pages/DashboardPage'));
 // const GroupsPage = lazy(() => import('./pages/GroupsPage'));
-// const LoginPage = lazy(() => import('./pages/LoginPage'));
+const LoginPage = lazy(() => import('./pages/LoginPage'));
 
 export default function App() {
   const dispatch = useDispatch();
@@ -33,12 +34,14 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-background text-slate-100 font-sans">
-      <Suspense fallback={<div className="flex h-screen items-center justify-center">Loading CampHe...</div>}>
+      <Suspense fallback={<div className="flex h-screen items-center justify-center">Loading...</div>}>
         <Routes>
-          <Route path="/" element={<DashboardPage />} />
-          {/* <Route path="/groups" element={<GroupsPage />} /> */}
-          {/* <Route path="/login" element={<LoginPage />} /> */}
-          <Route path="*" element={<DashboardPage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route element={<AuthGuard />}>
+            <Route path="/" element={<DashboardPage />} />
+            {/* <Route path="/groups" element={<GroupsPage />} /> */}
+            <Route path="*" element={<DashboardPage />} />
+          </Route>
         </Routes>
       </Suspense>
     </div>

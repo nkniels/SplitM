@@ -306,6 +306,135 @@ if (typeof firebase !== 'undefined') {
     }
 }
 
+// FinanceEngine contains pure functions for expense distribution and settlement calculation
+const FinanceEngine = {
+    /**
+     * Distributes a total amount among members based on the split type.
+     * Fixes rounding errors by allocating the penny remainder to the first valid member.
+     * @param {number} totalAmount - Total amount to split.
+     * @param {Array} members - Array of member objects { id, weight (optional) }.
+     * @param {string} splitType - 'equal', 'proportional', 'percent', 'custom'.
+     * @param {Object} customValues - Key: memberId, Value: amount or percent depending on type.
+     * @returns {Array} Array of { memberId, amount } objects representing the split.
+     */
+    distributeSplit(totalAmount, members, splitType, customValues = {}) {
+        if (!members || members.length === 0) return [];
+        let splits = [];
+
+        if (splitType === 'custom') {
+            for (const [id, amt] of Object.entries(customValues)) {
+                if (amt > 0) splits.push({ memberId: id, amount: amt });
+            }
+            // Strict validation: sum must match exactly (tolerance of 0.01 for floating point issues is fine, but we will force exactness later if needed).
+            return splits;
+        }
+
+        if (splitType === 'percent') {
+            for (const [id, percent] of Object.entries(customValues)) {
+                if (percent > 0) {
+                    // Truncate to 2 decimal places to avoid floating point bugs
+                    const amt = Math.round((percent / 100) * totalAmount * 100) / 100;
+                    splits.push({ memberId: id, amount: amt });
+                }
+            }
+        } else if (splitType === 'equal') {
+            const splitAmt = Math.floor((totalAmount / members.length) * 100) / 100;
+            members.forEach(m => {
+                splits.push({ memberId: m.id, amount: splitAmt });
+            });
+        } else if (splitType === 'proportional') {
+            const totalWeight = members.reduce((sum, m) => sum + (m.weight || 1), 0);
+            members.forEach(m => {
+                const amt = Math.floor(((totalAmount * (m.weight || 1)) / totalWeight) * 100) / 100;
+                if (amt > 0) splits.push({ memberId: m.id, amount: amt });
+            });
+        }
+
+        // Adjust for rounding remainders in percent, equal, and proportional
+        if (['equal', 'proportional', 'percent'].includes(splitType)) {
+            const calculatedSum = splits.reduce((sum, s) => sum + s.amount, 0);
+            let diff = Math.round((totalAmount - calculatedSum) * 100) / 100;
+            
+            if (diff !== 0 && splits.length > 0) {
+                // Add the remainder (which could be +0.01 or -0.01 etc.) to the first person's split
+                splits[0].amount = Math.round((splits[0].amount + diff) * 100) / 100;
+            }
+        }
+
+        // Filter out 0 amounts
+        return splits.filter(s => s.amount > 0);
+    },
+
+    /**
+     * Calculates the net balance for each member in a group.
+     * @param {Object} group - The group object containing members and expenses.
+     * @returns {Object} A map of memberId -> net balance. Positive means they are owed money, negative means they owe money.
+     */
+    calculateBalances(group) {
+        const balances = {};
+        group.members.forEach(m => balances[m.id] = 0);
+
+        group.expenses.forEach(expense => {
+            expense.payers.forEach(p => {
+                if (balances[p.memberId] !== undefined) balances[p.memberId] += p.amount;
+            });
+            expense.splits.forEach(s => {
+                if (balances[s.memberId] !== undefined) balances[s.memberId] -= s.amount;
+            });
+        });
+
+        return balances;
+    },
+
+    /**
+     * Computes the minimal number of transactions needed to settle debts.
+     * @param {Object} balances - A map of memberId -> net balance.
+     * @returns {Array} Array of { from, to, amount } settlement transactions.
+     */
+    computeSettlements(balances) {
+        const debtors = [];
+        const creditors = [];
+
+        for (const [id, balance] of Object.entries(balances)) {
+            // Use 0.01 as threshold for zero to handle floating point issues
+            if (balance < -0.01) debtors.push({ id, amount: -balance });
+            else if (balance > 0.01) creditors.push({ id, amount: balance });
+        }
+
+        debtors.sort((a, b) => b.amount - a.amount);
+        creditors.sort((a, b) => b.amount - a.amount);
+
+        const settlements = [];
+        let d = 0, c = 0;
+
+        while (d < debtors.length && c < creditors.length) {
+            const debtor = debtors[d];
+            const creditor = creditors[c];
+            
+            // Prevent infinite loop if amounts are extremely small (floating point dust)
+            if (debtor.amount < 0.01) { d++; continue; }
+            if (creditor.amount < 0.01) { c++; continue; }
+
+            const amount = Math.min(debtor.amount, creditor.amount);
+
+            settlements.push({
+                from: debtor.id,
+                to: creditor.id,
+                amount: Math.round(amount * 100) / 100
+            });
+
+            debtor.amount -= amount;
+            creditor.amount -= amount;
+
+            if (debtor.amount < 0.01) d++;
+            if (creditor.amount < 0.01) c++;
+        }
+
+        return settlements;
+    }
+};
+
+
 const app = {
     state: null,
     user: null,
@@ -1564,7 +1693,6 @@ const app = {
     },
 
     saveExpense() {
-        // Feature 38: DATA VALIDATION & Feature 7: SHAKE ANIMATION
         const group = getActiveGroup();
         const idInput = document.getElementById('expense-id').value;
         const descInput = document.getElementById('expense-desc');
@@ -1581,6 +1709,7 @@ const app = {
         if (!desc) { descInput.classList.add('shake'); setTimeout(()=>descInput.classList.remove('shake'), 500); return; }
         if (!totalAmount || totalAmount <= 0) { amountInput.classList.add('shake'); setTimeout(()=>amountInput.classList.remove('shake'), 500); return; }
 
+        // Collect Payers
         const payerInputs = document.querySelectorAll('.payer-input');
         const payers = [];
         let payersSum = 0;
@@ -1593,6 +1722,7 @@ const app = {
         });
 
         const payersError = document.getElementById('payers-error');
+        // Tolerance for payers sum to allow simple edits
         if (Math.abs(payersSum - totalAmount) > 0.05) {
             payersError.style.display = 'block';
             payersError.classList.add('shake');
@@ -1601,24 +1731,43 @@ const app = {
         }
         payersError.style.display = 'none';
 
-        if (!this.validateSplit()) {
-            const se = document.getElementById('split-error');
-            se.classList.add('shake');
-            setTimeout(()=>se.classList.remove('shake'), 500);
-            return;
-        }
-
+        // Collect Splits using FinanceEngine
         const type = document.querySelector('input[name="split-type"]:checked').value;
-        const splits = [];
         const splitInputs = document.querySelectorAll('.split-amount-input');
+        const checkboxes = document.querySelectorAll('.split-checkbox');
         
-        splitInputs.forEach(input => {
-            let amt = parseFloat(input.value) || 0;
-            if (amt > 0) {
-                if (type === 'percent') amt = (amt / 100) * totalAmount;
-                splits.push({ memberId: input.dataset.id, amount: amt });
+        const customValues = {};
+        let activeMembers = [];
+
+        if (type === 'custom' || type === 'percent') {
+            splitInputs.forEach(input => {
+                if (!input.disabled) customValues[input.dataset.id] = parseFloat(input.value) || 0;
+            });
+        }
+        
+        checkboxes.forEach(cb => {
+            if (cb.checked) {
+                const member = group.members.find(m => m.id === cb.dataset.id);
+                if (member) activeMembers.push(member);
             }
         });
+
+        // Use FinanceEngine to accurately distribute the splits, handling rounding errors
+        const splits = FinanceEngine.distributeSplit(totalAmount, activeMembers, type, customValues);
+
+        // Validation for custom/percent before saving
+        const splitError = document.getElementById('split-error');
+        if (type === 'custom' || type === 'percent') {
+            const calculatedSum = splits.reduce((sum, s) => sum + s.amount, 0);
+            if (Math.abs(calculatedSum - totalAmount) > 0.05) {
+                splitError.textContent = type === 'percent' ? "Le total des pourcentages doit être 100%." : "La somme des répartitions ne correspond pas au total.";
+                splitError.style.display = 'block';
+                splitError.classList.add('shake');
+                setTimeout(()=>splitError.classList.remove('shake'), 500);
+                return;
+            }
+        }
+        splitError.style.display = 'none';
 
         const expense = {
             id: idInput || generateId(),
@@ -1727,49 +1876,8 @@ const app = {
     // --- ALGORITHMS & SETTLEMENTS ---
     calculateSettlements() {
         const group = getActiveGroup();
-        const balances = {};
-        
-        group.members.forEach(m => balances[m.id] = 0);
-        
-        // Calculate net balances — ALL expenses count, including reimbursements
-        group.expenses.forEach(expense => {
-            expense.payers.forEach(p => { if (balances[p.memberId] !== undefined) balances[p.memberId] += p.amount; });
-            expense.splits.forEach(s => { if (balances[s.memberId] !== undefined) balances[s.memberId] -= s.amount; });
-        });
-
-        const debtors = [];
-        const creditors = [];
-
-        for (const [id, balance] of Object.entries(balances)) {
-            if (balance < -0.01) debtors.push({ id, amount: -balance });
-            else if (balance > 0.01) creditors.push({ id, amount: balance });
-        }
-
-        debtors.sort((a, b) => b.amount - a.amount);
-        creditors.sort((a, b) => b.amount - a.amount);
-
-        const settlements = [];
-        let d = 0, c = 0;
-
-        while (d < debtors.length && c < creditors.length) {
-            const debtor = debtors[d];
-            const creditor = creditors[c];
-            const amount = Math.min(debtor.amount, creditor.amount);
-
-            settlements.push({
-                from: debtor.id,
-                to: creditor.id,
-                amount: amount
-            });
-
-            debtor.amount -= amount;
-            creditor.amount -= amount;
-
-            if (debtor.amount < 0.01) d++;
-            if (creditor.amount < 0.01) c++;
-        }
-
-        return settlements;
+        const balances = FinanceEngine.calculateBalances(group);
+        return FinanceEngine.computeSettlements(balances);
     },
 
     /**
@@ -1782,10 +1890,12 @@ const app = {
         if (!list) return;
         const d = dict[state.settings.language];
 
-        // Feature 21: CONFETTI CELEBRATION
+        // Feature 21: CONFETTI CELEBRATION (Kept to retain Gamification)
         if (settlements.length === 0 && group.expenses.length > 0) {
             if(!window.confettiFired) {
-                confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, colors: ['#004aad', '#38bdf8'] });
+                if(typeof confetti !== 'undefined') {
+                    confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, colors: ['#004aad', '#38bdf8'] });
+                }
                 window.confettiFired = true;
             }
             list.innerHTML = '';
@@ -1815,7 +1925,7 @@ const app = {
                 <div style="display:flex; align-items:center; gap:10px; flex:1;">
                     <i class="fa-solid fa-arrow-right-arrow-left"></i>
                     <div style="flex:1;">
-                        <strong>${sanitizeHTML(fromName)}</strong> <span style="color:var(--text-muted)">${d.owes}</span> <strong>${sanitizeHTML(toName)}</strong>
+                        <strong>${sanitizeHTML(fromName)}</strong> <span style="color:var(--text-muted)">${d.owes || 'owes'}</span> <strong>${sanitizeHTML(toName)}</strong>
                     </div>
                 </div>
                 <div style="display:flex; align-items:center; gap:15px;">

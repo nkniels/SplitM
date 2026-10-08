@@ -1,0 +1,18 @@
+{
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json",
+    "edition": "enterprise",
+    "database": "camphe-db",
+    "location": "nam5"
+  },
+  "auth": {
+    "providers": {
+      "emailPassword": true,
+      "googleSignIn": {
+        "oAuthBrandDisplayName": "CampHe",
+        "supportEmail": "support@camphe.example.com"
+      }
+    }
+  }
+}

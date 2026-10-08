@@ -1,4 +1,3 @@
-import React from 'react';
 import { useSelector } from 'react-redux';
 import { Layers, LogOut } from 'lucide-react';
 import type { RootState } from '../../core/store/store';

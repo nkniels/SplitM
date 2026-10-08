@@ -7,6 +7,7 @@ import { loadExpenses } from '../modules/expenses/expense.thunks';
 import { ExpenseList } from '../components/expenses/ExpenseList';
 import { ExpenseForm } from '../components/expenses/ExpenseForm';
 import GroupForm from '../components/groups/GroupForm';
+import MembersPanel from '../components/groups/MembersPanel';
 import { SettlementsView } from '../components/settlements/SettlementsView';
 import { Button } from '../components/ui/Button';
 
@@ -19,6 +20,7 @@ export default function DashboardPage() {
 
   const [showExpenseForm, setShowExpenseForm] = useState(false);
   const [showGroupForm, setShowGroupForm] = useState(false);
+  const [showMembersPanel, setShowMembersPanel] = useState(false);
 
   // Load groups on mount
   useEffect(() => {
@@ -53,6 +55,16 @@ export default function DashboardPage() {
         </div>
 
         <div className="flex items-center gap-2">
+          {activeGroup && (
+            <Button
+              variant="outline"
+              size="sm"
+              leftIcon={<Users className="h-4 w-4" />}
+              onClick={() => setShowMembersPanel(true)}
+            >
+              Members
+            </Button>
+          )}
           {activeGroup && activeMembers.length > 0 && (
             <Button
               variant="primary"
@@ -94,10 +106,7 @@ export default function DashboardPage() {
             variant="outline"
             size="sm"
             leftIcon={<Users className="h-4 w-4" />}
-            onClick={() => {
-              // Navigation to members management can be wired up in AppShell
-              // For now open the group creation flow as a shortcut placeholder
-            }}
+            onClick={() => setShowMembersPanel(true)}
           >
             Manage Members
           </Button>
@@ -133,6 +142,11 @@ export default function DashboardPage() {
       {/* Create Group modal */}
       {showGroupForm && (
         <GroupForm onClose={() => setShowGroupForm(false)} />
+      )}
+
+      {/* Members panel modal */}
+      {showMembersPanel && activeGroupId && (
+        <MembersPanel onClose={() => setShowMembersPanel(false)} />
       )}
     </div>
   );

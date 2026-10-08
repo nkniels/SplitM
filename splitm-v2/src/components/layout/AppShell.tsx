@@ -5,6 +5,7 @@ import type { RootState } from '../../core/store/store';
 import { logout } from '../../modules/auth/auth.service';
 import SyncStatusBar from './SyncStatusBar';
 import { Button } from '../ui/Button';
+import GroupSelector from '../groups/GroupSelector';
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -34,8 +35,8 @@ export default function AppShell({ children }: AppShellProps) {
             <span className="font-bold text-primary text-lg tracking-tight">SplitM</span>
           </div>
 
-          {/* Center: portal for GroupSelector (Task 4) */}
-          <div id="group-selector-portal" />
+          {/* Center: GroupSelector */}
+          <GroupSelector />
 
           {/* Right: user info + logout */}
           <div className="flex items-center gap-3">

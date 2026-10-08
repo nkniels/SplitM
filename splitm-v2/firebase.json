@@ -14,5 +14,20 @@
         "supportEmail": "support@camphe.example.com"
       }
     }
+  },
+  "hosting": {
+    "site": "split-m",
+    "public": "dist",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
   }
 }

@@ -1,0 +1,27 @@
+
+> splitm-v2@0.0.0 build
+> tsc -b && vite build
+
+[36mvite v8.1.0 [32mbuilding client environment for production...[36m[39m
+[2Ktransforming...✓ 95 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                          0.45 kB │ gzip:   0.29 kB
+dist/assets/index-CSCvEgrL.css          24.16 kB │ gzip:   5.30 kB
+dist/assets/DashboardPage-DPWuR544.js    0.33 kB │ gzip:   0.25 kB
+dist/assets/LoginPage-BGTXOz6N.js        6.31 kB │ gzip:   2.23 kB
+dist/assets/index-ClQAHiL3.js          830.64 kB │ gzip: 253.38 kB
+
+[33m[33m[PLUGIN_TIMINGS] [0mYour build spent significant time in plugins. Here is a breakdown:
+  - vite:build-html (48%)
+  - rolldown:vite-resolve (30%)
+  - vite:css (13%)
+See https://rolldown.rs/reference/InputOptions.checks#plugintimings for more details.
+[39m
+[33m[plugin builtin:vite-reporter] 
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.[39m
+[32m✓ built in 9.54s[39m
+EXIT_CODE=0 

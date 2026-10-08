@@ -1,4 +1,3 @@
-import React from 'react';
 import { Pencil, Trash2 } from 'lucide-react';
 import type { Expense, Member } from '../../core/types';
 

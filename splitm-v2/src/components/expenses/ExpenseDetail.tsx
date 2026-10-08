@@ -1,4 +1,3 @@
-import React from 'react';
 import type { Expense, Member } from '../../core/types';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';

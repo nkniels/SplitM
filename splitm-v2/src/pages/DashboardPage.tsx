@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { PlusCircle, Users } from 'lucide-react';
 import type { RootState, AppDispatch } from '../core/store/store';
@@ -7,6 +7,7 @@ import { loadExpenses } from '../modules/expenses/expense.thunks';
 import { ExpenseList } from '../components/expenses/ExpenseList';
 import { ExpenseForm } from '../components/expenses/ExpenseForm';
 import GroupForm from '../components/groups/GroupForm';
+import { SettlementsView } from '../components/settlements/SettlementsView';
 import { Button } from '../components/ui/Button';
 
 export default function DashboardPage() {
@@ -103,14 +104,21 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* Expense list */}
+      {/* Expense list + Settlements panel */}
       {activeGroup && activeMembers.length > 0 && activeGroupId && (
-        <ExpenseList
-          groupId={activeGroupId}
-          currency={activeGroup.currency}
-          members={activeMembers}
-          onAddExpense={() => setShowExpenseForm(true)}
-        />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2">
+            <ExpenseList
+              groupId={activeGroupId}
+              currency={activeGroup.currency}
+              members={activeMembers}
+              onAddExpense={() => setShowExpenseForm(true)}
+            />
+          </div>
+          <div>
+            <SettlementsView />
+          </div>
+        </div>
       )}
 
       {/* Add Expense modal */}

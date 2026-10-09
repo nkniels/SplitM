@@ -1,7 +1,7 @@
 {
   "hosting": {
     "site": "split-m",
-    "public": "public",
+    "public": "splitm-v2/dist",
     "ignore": [
       "firebase.json",
       "**/.*",

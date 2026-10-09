@@ -39,3 +39,20 @@ export const deleteExpenseThunk = createAsyncThunk(
     return id;
   }
 );
+
+export const toggleSettleExpenseThunk = createAsyncThunk(
+  'expenses/toggleSettle',
+  async (expenseId: string, { dispatch, getState }) => {
+    const state = getState() as RootState;
+    const expense = state.expenses.expenses[expenseId];
+    if (!expense) return;
+    const updated: Expense = {
+      ...expense,
+      settled: !expense.settled,
+      updatedAt: Date.now(),
+    };
+    dispatch(updateExpense(updated));
+    await updateExpenseInStore(updated);
+    return updated;
+  }
+);

@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { ReceiptText } from 'lucide-react';
 import type { Expense, Member } from '../../core/types';
 import type { RootState, AppDispatch } from '../../core/store/store';
-import { loadExpenses, deleteExpenseThunk } from '../../modules/expenses/expense.thunks';
+import { loadExpenses, deleteExpenseThunk, toggleSettleExpenseThunk } from '../../modules/expenses/expense.thunks';
 import { Skeleton } from '../ui/Skeleton';
 import { Button } from '../ui/Button';
 import { Modal } from '../ui/Modal';
@@ -93,6 +93,22 @@ export function ExpenseList({ groupId, currency, members, onAddExpense }: Expens
     setExpenseToDelete(null);
   }
 
+  async function handleToggleSettle(expense: Expense) {
+    await dispatch(toggleSettleExpenseThunk(expense.id));
+    toast(expense.settled ? 'Marked as unsettled' : 'Marked as settled', 'success');
+  }
+
+  // Summary stats for the header bar
+  const totalAmount = useMemo(
+    () => groupExpenses.reduce((sum, e) => sum + e.amount, 0),
+    [groupExpenses]
+  );
+  const unsettledAmount = useMemo(
+    () => groupExpenses.filter(e => !e.settled).reduce((sum, e) => sum + e.amount, 0),
+    [groupExpenses]
+  );
+  const currencySymbol = currency === 'USD' ? '$' : currency === 'EUR' ? '€' : currency === 'GBP' ? '£' : currency;
+
   const selectClass =
     'h-9 rounded-md border border-slate-700 bg-slate-800 px-3 text-sm text-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary';
 
@@ -105,6 +121,25 @@ export function ExpenseList({ groupId, currency, members, onAddExpense }: Expens
 
   return (
     <div>
+      {/* Summary bar */}
+      {!isLoading && groupExpenses.length > 0 && (
+        <div className="flex items-center justify-between mb-4 px-1">
+          <span className="text-sm text-slate-400">
+            {groupExpenses.length} expense{groupExpenses.length !== 1 ? 's' : ''}
+          </span>
+          <div className="flex items-center gap-3 text-sm">
+            <span className="text-slate-400">
+              Total: <span className="text-slate-200 font-medium">{currencySymbol}{totalAmount.toFixed(2)}</span>
+            </span>
+            {unsettledAmount > 0 && (
+              <span className="text-slate-400">
+                Unsettled: <span className="text-danger font-medium">{currencySymbol}{unsettledAmount.toFixed(2)}</span>
+              </span>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Filter bar */}
       <div className="flex flex-wrap gap-2 mb-4 items-center">
         {/* Category filter */}
@@ -194,6 +229,7 @@ export function ExpenseList({ groupId, currency, members, onAddExpense }: Expens
               onClick={() => setExpenseToView(expense)}
               onEdit={() => setExpenseToEdit(expense)}
               onDelete={() => setExpenseToDelete(expense)}
+              onToggleSettle={() => void handleToggleSettle(expense)}
             />
           ))}
         </div>
@@ -229,6 +265,7 @@ export function ExpenseList({ groupId, currency, members, onAddExpense }: Expens
           members={members}
           currency={currency}
           onEdit={() => setExpenseToEdit(expenseToView)}
+          onToggleSettle={() => void handleToggleSettle(expenseToView)}
           onClose={() => setExpenseToView(null)}
         />
       )}

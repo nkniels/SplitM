@@ -1,5 +1,6 @@
-import { Pencil, Trash2 } from 'lucide-react';
+import { Pencil, Trash2, CheckCircle2, Circle } from 'lucide-react';
 import type { Expense, Member } from '../../core/types';
+import { cn } from '../../core/utils/helpers';
 
 interface ExpenseCardProps {
   expense: Expense;
@@ -7,6 +8,7 @@ interface ExpenseCardProps {
   currency: string;
   onEdit: () => void;
   onDelete: () => void;
+  onToggleSettle: () => void;
   isCreator: boolean;
   onClick: () => void;
 }
@@ -31,6 +33,7 @@ export function ExpenseCard({
   currency,
   onEdit,
   onDelete,
+  onToggleSettle,
   isCreator,
   onClick,
 }: ExpenseCardProps) {
@@ -48,7 +51,10 @@ export function ExpenseCard({
 
   return (
     <div
-      className="bg-surface border border-slate-700 rounded-lg p-4 hover:border-slate-600 transition-colors cursor-pointer relative"
+      className={cn(
+        'bg-surface border rounded-lg p-4 hover:border-slate-600 transition-colors cursor-pointer relative',
+        expense.settled ? 'border-slate-700/50 opacity-70' : 'border-slate-700'
+      )}
       onClick={onClick}
       role="button"
       tabIndex={0}
@@ -62,6 +68,27 @@ export function ExpenseCard({
     >
       {/* Action buttons */}
       <div className="absolute top-3 right-3 flex items-center gap-1">
+        {/* Settle toggle */}
+        <button
+          className={cn(
+            'p-1.5 rounded transition-colors',
+            expense.settled
+              ? 'text-success hover:text-success/70 hover:bg-slate-700'
+              : 'text-slate-400 hover:text-success hover:bg-slate-700'
+          )}
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleSettle();
+          }}
+          aria-label={expense.settled ? `Unsettle ${expense.description}` : `Mark ${expense.description} as settled`}
+          title={expense.settled ? 'Mark as unsettled' : 'Mark as settled'}
+        >
+          {expense.settled
+            ? <CheckCircle2 className="h-3.5 w-3.5" />
+            : <Circle className="h-3.5 w-3.5" />
+          }
+        </button>
+
         <button
           className="p-1.5 rounded hover:bg-slate-700 text-slate-400 hover:text-slate-200 transition-colors"
           onClick={(e) => {
@@ -89,21 +116,24 @@ export function ExpenseCard({
       </div>
 
       {/* Top row: description + amount */}
-      <div className="flex items-start justify-between pr-16">
-        <p className="font-medium text-slate-100 truncate flex-1">{expense.description}</p>
-        <p className="text-primary font-semibold ml-3 shrink-0">
+      <div className="flex items-start justify-between pr-24">
+        <p className={cn('font-medium truncate flex-1', expense.settled ? 'text-slate-400 line-through' : 'text-slate-100')}>
+          {expense.description}
+        </p>
+        <p className={cn('font-semibold ml-3 shrink-0', expense.settled ? 'text-slate-500' : 'text-primary')}>
           {symbol}{expense.amount.toFixed(2)}
         </p>
       </div>
 
-      {/* Middle row: date + category */}
-      <div className="flex items-center gap-2 mt-1.5">
+      {/* Middle row: date + category + status */}
+      <div className="flex items-center gap-2 mt-1.5 flex-wrap">
         <span className="text-xs text-slate-400">{formatDate(expense.date)}</span>
         <span className="text-xs bg-slate-700 text-slate-300 rounded px-2 py-0.5">
           {expense.category}
         </span>
         {expense.settled && (
-          <span className="text-xs bg-green-900/50 text-green-400 rounded px-2 py-0.5">
+          <span className="text-xs bg-success/10 text-success rounded px-2 py-0.5 flex items-center gap-1">
+            <CheckCircle2 className="h-3 w-3" aria-hidden="true" />
             Settled
           </span>
         )}

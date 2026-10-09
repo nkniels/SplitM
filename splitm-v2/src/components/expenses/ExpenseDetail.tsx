@@ -1,12 +1,15 @@
+import { CheckCircle2, Circle } from 'lucide-react';
 import type { Expense, Member } from '../../core/types';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
+import { cn } from '../../core/utils/helpers';
 
 interface ExpenseDetailProps {
   expense: Expense;
   members: Member[];
   currency: string;
   onEdit: () => void;
+  onToggleSettle: () => void;
   onClose: () => void;
 }
 
@@ -34,6 +37,7 @@ export function ExpenseDetail({
   members,
   currency,
   onEdit,
+  onToggleSettle,
   onClose,
 }: ExpenseDetailProps) {
   const symbol = currencySymbol(currency);
@@ -68,8 +72,11 @@ export function ExpenseDetail({
           </div>
           <div>
             <p className="text-xs text-slate-500 uppercase tracking-wide">Status</p>
-            <p className={`mt-0.5 text-sm font-medium ${expense.settled ? 'text-green-400' : 'text-slate-300'}`}>
-              {expense.settled ? 'Settled' : 'Unsettled'}
+            <p className={cn('mt-0.5 text-sm font-medium flex items-center gap-1.5', expense.settled ? 'text-success' : 'text-slate-400')}>
+              {expense.settled
+                ? <><CheckCircle2 className="h-4 w-4" aria-hidden="true" /> Settled</>
+                : <><Circle className="h-4 w-4" aria-hidden="true" /> Unsettled</>
+              }
             </p>
           </div>
         </div>
@@ -121,7 +128,22 @@ export function ExpenseDetail({
         )}
 
         {/* Footer */}
-        <div className="flex justify-end pt-2 border-t border-slate-700">
+        <div className="flex justify-between items-center pt-2 border-t border-slate-700">
+          <Button
+            variant={expense.settled ? 'outline' : 'secondary'}
+            size="sm"
+            leftIcon={expense.settled
+              ? <Circle className="h-4 w-4" />
+              : <CheckCircle2 className="h-4 w-4" />
+            }
+            onClick={() => {
+              onToggleSettle();
+              onClose();
+            }}
+          >
+            {expense.settled ? 'Mark unsettled' : 'Mark settled'}
+          </Button>
+
           <Button
             variant="primary"
             onClick={() => {

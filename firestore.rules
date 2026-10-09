@@ -1,0 +1,51 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Helpers ─────────────────────────────────────────────────────────────
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(resource) {
+      return request.auth.uid == resource.data.createdBy;
+    }
+
+    // ── Groups ──────────────────────────────────────────────────────────────
+    // Only the creator can read/write their groups.
+    match /groups/{groupId} {
+      allow read, write: if isSignedIn() && isOwner(resource);
+      allow create: if isSignedIn() && request.auth.uid == request.resource.data.createdBy;
+    }
+
+    // ── Members ─────────────────────────────────────────────────────────────
+    // Members belong to a group. Allow access if the caller owns the parent group.
+    match /members/{memberId} {
+      allow read, write: if isSignedIn() &&
+        exists(/databases/$(database)/documents/groups/$(resource.data.groupId)) &&
+        get(/databases/$(database)/documents/groups/$(resource.data.groupId)).data.createdBy == request.auth.uid;
+
+      allow create: if isSignedIn() &&
+        exists(/databases/$(database)/documents/groups/$(request.resource.data.groupId)) &&
+        get(/databases/$(database)/documents/groups/$(request.resource.data.groupId)).data.createdBy == request.auth.uid;
+    }
+
+    // ── Expenses ────────────────────────────────────────────────────────────
+    // Expenses belong to a group. Same ownership check as members.
+    match /expenses/{expenseId} {
+      allow read, write: if isSignedIn() &&
+        exists(/databases/$(database)/documents/groups/$(resource.data.groupId)) &&
+        get(/databases/$(database)/documents/groups/$(resource.data.groupId)).data.createdBy == request.auth.uid;
+
+      allow create: if isSignedIn() &&
+        exists(/databases/$(database)/documents/groups/$(request.resource.data.groupId)) &&
+        get(/databases/$(database)/documents/groups/$(request.resource.data.groupId)).data.createdBy == request.auth.uid;
+    }
+
+    // ── Default deny ────────────────────────────────────────────────────────
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

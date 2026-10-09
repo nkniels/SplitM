@@ -42,7 +42,7 @@ jobs:
       - name: Install Firebase CLI
         run: npm install -g firebase-tools
 
-      - name: Deploy to Firebase Hosting
+      - name: Deploy hosting and Firestore rules
         env:
           FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
-        run: firebase deploy --only hosting --project splitm-a1f60
+        run: firebase deploy --only hosting,firestore:rules --project splitm-a1f60

@@ -26,3 +26,15 @@ Thumbs.db
 .env.development.local
 .env.test.local
 .env.production.local
+
+# Build artifacts and temp build files
+splitm-v2/dist/
+splitm-v2/build_out.txt
+splitm-v2/build_err.txt
+splitm-v2/build_result.txt
+splitm-v2/tsc_out.txt
+splitm-v2/vite_out.txt
+splitm-v2/run_build.cjs
+splitm-v2/run_build.js
+splitm-v2/*.cmd
+build_result.txt

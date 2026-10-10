@@ -6,12 +6,9 @@ import {
   Share2, 
   Copy, 
   Check, 
-  DollarSign, 
-  ExternalLink,
   Sparkles,
-  TrendingUp,
-  TrendingDown,
-  Layers
+  Layers,
+  Zap
 } from 'lucide-react';
 import type { RootState, AppDispatch } from '../../core/store/store';
 import { FinanceEngine } from '../../core/finance/FinanceEngine';
@@ -73,16 +70,15 @@ export function SettlementsView() {
 
   const allSettled = Object.values(balances).every(b => Math.abs(b) < 0.01);
 
-  // Group metrics
-  const totalVolume = useMemo(() => {
-    if (!derivedGroup?.expenses) return 0;
-    return derivedGroup.expenses.reduce((sum, e) => sum + e.amount, 0);
-  }, [derivedGroup]);
-
   const totalOwedInGroup = useMemo(() => {
     return Object.values(balances)
       .filter(b => b > 0)
       .reduce((sum, b) => sum + b, 0);
+  }, [balances]);
+
+  const maxBalanceMagnitude = useMemo(() => {
+    const vals = Object.values(balances).map(Math.abs);
+    return Math.max(...vals, 1);
   }, [balances]);
 
   const handleCopyNote = async (fromName: string, toName: string, amount: number, idx: number) => {
@@ -106,7 +102,7 @@ export function SettlementsView() {
           text
         });
       } catch {
-        // User cancelled share
+        // Cancelled share
       }
     } else {
       await navigator.clipboard.writeText(text);
@@ -141,7 +137,7 @@ export function SettlementsView() {
 
     try {
       await dispatch(saveExpenseThunk(settlementExpense)).unwrap();
-      toast(`Recorded ${currencySymbol}${amount.toFixed(2)} settlement!`, 'success');
+      toast(`Settlement of ${currencySymbol}${amount.toFixed(2)} recorded!`, 'success');
     } catch {
       toast('Failed to record settlement', 'error');
     } finally {
@@ -154,18 +150,18 @@ export function SettlementsView() {
   return (
     <div className="space-y-4">
       {/* Top Fintech Status Card */}
-      <div className="glass-card rounded-2xl p-5 border border-slate-800 shadow-xl relative overflow-hidden">
+      <div className="glass-panel rounded-2xl p-5 border border-slate-800 shadow-xl relative overflow-hidden">
         {/* Subtle background glow */}
-        <div className="absolute -top-12 -right-12 w-40 h-40 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -top-12 -right-12 w-44 h-44 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
 
         <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <span className="p-2 rounded-xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+          <div className="flex items-center gap-2.5">
+            <span className="p-2 rounded-xl bg-indigo-500/15 text-indigo-400 border border-indigo-500/20 shadow-sm shadow-indigo-500/10">
               <Sparkles className="h-4 w-4" />
             </span>
             <div>
               <h2 className="text-base font-bold text-slate-100 tracking-tight">Debt Simplifier</h2>
-              <p className="text-xs text-slate-400">Optimal transaction engine</p>
+              <p className="text-xs text-slate-400">Zero-Sum Settlement Engine</p>
             </div>
           </div>
 
@@ -173,9 +169,9 @@ export function SettlementsView() {
             <button
               onClick={() => setActiveTab('settlements')}
               className={cn(
-                'px-3 py-1 text-xs font-semibold rounded-lg transition-all',
+                'px-3 py-1 text-xs font-semibold rounded-lg transition-all active:scale-95',
                 activeTab === 'settlements'
-                  ? 'bg-primary text-white shadow-md'
+                  ? 'bg-primary text-white shadow-md shadow-primary/30'
                   : 'text-slate-400 hover:text-slate-200'
               )}
             >
@@ -184,9 +180,9 @@ export function SettlementsView() {
             <button
               onClick={() => setActiveTab('balances')}
               className={cn(
-                'px-3 py-1 text-xs font-semibold rounded-lg transition-all',
+                'px-3 py-1 text-xs font-semibold rounded-lg transition-all active:scale-95',
                 activeTab === 'balances'
-                  ? 'bg-primary text-white shadow-md'
+                  ? 'bg-primary text-white shadow-md shadow-primary/30'
                   : 'text-slate-400 hover:text-slate-200'
               )}
             >
@@ -197,22 +193,22 @@ export function SettlementsView() {
 
         {/* Financial KPI bar */}
         <div className="grid grid-cols-2 gap-3 pt-3 border-t border-slate-800/80">
-          <div className="bg-slate-950/40 rounded-xl p-3 border border-slate-800/50">
-            <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wider block mb-0.5">
-              Pending Volume
+          <div className="bg-slate-950/50 rounded-xl p-3 border border-slate-800/60">
+            <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block mb-1">
+              Active Debt Volume
             </span>
-            <span className="font-mono text-base font-bold text-slate-100 tracking-tight">
+            <span className="font-mono text-base font-extrabold text-slate-100 tracking-tight tabular-nums">
               {currencySymbol}{totalOwedInGroup.toFixed(2)}
             </span>
           </div>
 
-          <div className="bg-slate-950/40 rounded-xl p-3 border border-slate-800/50">
-            <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wider block mb-0.5">
-              Efficiency
+          <div className="bg-slate-950/50 rounded-xl p-3 border border-slate-800/60">
+            <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block mb-1">
+              Resolution Path
             </span>
-            <span className="text-xs font-medium text-emerald-400 flex items-center gap-1 mt-0.5">
+            <span className="text-xs font-semibold text-emerald-400 flex items-center gap-1.5 mt-0.5">
               <Layers className="h-3.5 w-3.5" />
-              {settlements.length === 0 ? 'Zero Debts' : `${settlements.length} transfer${settlements.length > 1 ? 's' : ''} needed`}
+              {settlements.length === 0 ? 'All Cleared' : `${settlements.length} transfer${settlements.length > 1 ? 's' : ''} needed`}
             </span>
           </div>
         </div>
@@ -220,16 +216,17 @@ export function SettlementsView() {
 
       {/* Main Content Area */}
       {allSettled ? (
-        <div className="glass-card rounded-2xl p-8 border border-emerald-500/20 text-center relative overflow-hidden glow-success/20">
-          <div className="h-16 w-16 mx-auto mb-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
+        <div className="glass-panel rounded-2xl p-8 border border-emerald-500/20 text-center relative overflow-hidden">
+          <div className="h-16 w-16 mx-auto mb-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center shadow-lg shadow-emerald-500/5">
             <CheckCircle2 className="h-8 w-8 text-emerald-400" />
           </div>
           <h3 className="text-lg font-bold text-slate-100 mb-1">All Settled Up!</h3>
           <p className="text-slate-400 text-sm max-w-xs mx-auto">
-            All debts have been cleared. Every member's balance is exactly $0.00.
+            All debts have been cleared. Every member's balance is exactly {currencySymbol}0.00.
           </p>
           <div className="mt-4 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-950/60 border border-emerald-800/50 text-xs font-mono text-emerald-300">
-            Zero-Sum Ledger Verified
+            <Zap className="w-3 h-3 text-emerald-400" />
+            Zero-Sum Ledger Invariant Verified
           </div>
         </div>
       ) : activeTab === 'settlements' ? (
@@ -243,32 +240,34 @@ export function SettlementsView() {
             return (
               <div 
                 key={`${s.from}-${s.to}-${idx}`}
-                className="glass-card rounded-xl p-4 border border-slate-800 hover:border-slate-700/80 transition-all duration-200 group"
+                className="glass-panel rounded-2xl p-4 border border-slate-800 hover:border-slate-700/80 transition-all duration-200 group"
               >
-                <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center justify-between mb-3.5">
                   {/* From Member */}
                   <div className="flex items-center gap-2.5">
-                    <div className="h-9 w-9 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-xs font-bold text-rose-400">
+                    <div className="h-9 w-9 rounded-xl bg-rose-500/15 border border-rose-500/25 flex items-center justify-center text-xs font-bold text-rose-300">
                       {getInitials(fromMember?.name ?? 'U')}
                     </div>
                     <div>
-                      <span className="text-xs text-rose-400 font-semibold block uppercase tracking-wider">Owes</span>
-                      <span className="text-sm font-semibold text-slate-200">{fromMember?.name ?? 'Unknown'}</span>
+                      <span className="text-[10px] text-rose-400 font-bold block uppercase tracking-wider">Pays</span>
+                      <span className="text-sm font-semibold text-slate-100">{fromMember?.name ?? 'Unknown'}</span>
                     </div>
                   </div>
 
-                  {/* Transfer Visual */}
-                  <div className="flex flex-col items-center px-2">
-                    <ArrowRight className="h-4 w-4 text-slate-500 group-hover:text-indigo-400 transition-colors" />
+                  {/* Transfer Visual with Animated Indicator */}
+                  <div className="flex flex-col items-center px-3">
+                    <div className="h-6 w-6 rounded-full bg-slate-800/90 border border-slate-700 flex items-center justify-center text-slate-400 group-hover:text-primary group-hover:scale-110 transition-all">
+                      <ArrowRight className="h-3.5 w-3.5" />
+                    </div>
                   </div>
 
                   {/* To Member */}
                   <div className="flex items-center gap-2.5 text-right">
                     <div>
-                      <span className="text-xs text-emerald-400 font-semibold block uppercase tracking-wider">Receives</span>
-                      <span className="text-sm font-semibold text-slate-200">{toMember?.name ?? 'Unknown'}</span>
+                      <span className="text-[10px] text-emerald-400 font-bold block uppercase tracking-wider">Receives</span>
+                      <span className="text-sm font-semibold text-slate-100">{toMember?.name ?? 'Unknown'}</span>
                     </div>
-                    <div className="h-9 w-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-xs font-bold text-emerald-400">
+                    <div className="h-9 w-9 rounded-xl bg-emerald-500/15 border border-emerald-500/25 flex items-center justify-center text-xs font-bold text-emerald-300">
                       {getInitials(toMember?.name ?? 'U')}
                     </div>
                   </div>
@@ -277,7 +276,7 @@ export function SettlementsView() {
                 {/* Amount & Quick Actions */}
                 <div className="flex items-center justify-between pt-3 border-t border-slate-800/80">
                   <div className="flex items-baseline gap-1">
-                    <span className="font-mono text-lg font-bold text-slate-100 tracking-tight">
+                    <span className="font-mono text-lg font-bold text-emerald-300 tracking-tight tabular-nums">
                       {currencySymbol}{s.amount.toFixed(2)}
                     </span>
                   </div>
@@ -286,7 +285,7 @@ export function SettlementsView() {
                     <button
                       onClick={() => handleCopyNote(fromMember?.name ?? '', toMember?.name ?? '', s.amount, idx)}
                       title="Copy payment note"
-                      className="p-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors border border-slate-700/60"
+                      className="p-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white transition-all active:scale-95 border border-slate-700/60"
                       aria-label="Copy note"
                     >
                       {copiedIndex === idx ? (
@@ -299,7 +298,7 @@ export function SettlementsView() {
                     <button
                       onClick={() => handleShare(fromMember?.name ?? '', toMember?.name ?? '', s.amount)}
                       title="Share payment reminder"
-                      className="p-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors border border-slate-700/60"
+                      className="p-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white transition-all active:scale-95 border border-slate-700/60"
                       aria-label="Share reminder"
                     >
                       <Share2 className="h-3.5 w-3.5" />
@@ -308,8 +307,9 @@ export function SettlementsView() {
                     <button
                       disabled={isSettling}
                       onClick={() => handleRecordPayment(s.from, s.to, s.amount, idx)}
-                      className="px-2.5 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/30 text-xs font-semibold flex items-center gap-1 transition-all disabled:opacity-50"
+                      className="px-3 py-1.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/30 text-xs font-bold flex items-center gap-1.5 transition-all active:scale-95 disabled:opacity-50 shadow-sm shadow-emerald-500/10"
                     >
+                      <Check className="w-3.5 h-3.5" />
                       {isSettling ? 'Recording...' : 'Mark Paid'}
                     </button>
                   </div>
@@ -319,49 +319,61 @@ export function SettlementsView() {
           })}
         </div>
       ) : (
-        /* Net Balances List View */
-        <div className="glass-card rounded-2xl p-4 border border-slate-800 space-y-2">
+        /* Net Balances List View with Visual Weight Bar */
+        <div className="glass-panel rounded-2xl p-4 border border-slate-800 space-y-2.5">
           {derivedGroup.members.map(member => {
             const bal = balances[member.id] ?? 0;
             const isZero = Math.abs(bal) < 0.01;
             const isCreditor = bal > 0.01;
+            const barWidthPct = Math.min((Math.abs(bal) / maxBalanceMagnitude) * 100, 100);
 
             return (
               <div 
                 key={member.id}
-                className="flex items-center justify-between p-3 rounded-xl bg-slate-900/60 border border-slate-800/80"
+                className="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800/80 relative overflow-hidden group hover:border-slate-700/80 transition-all"
               >
-                <div className="flex items-center gap-3">
-                  <div className={cn(
-                    'h-9 w-9 rounded-xl flex items-center justify-center text-xs font-bold border',
-                    isZero 
-                      ? 'bg-slate-800 text-slate-400 border-slate-700' 
-                      : isCreditor 
-                        ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' 
-                        : 'bg-rose-500/10 text-rose-400 border-rose-500/20'
-                  )}>
-                    {getInitials(member.name)}
-                  </div>
-                  <div>
-                    <span className="text-sm font-semibold text-slate-200 block">{member.name}</span>
-                    <span className="text-xs text-slate-500 capitalize">{member.status || 'Active'}</span>
-                  </div>
-                </div>
+                {/* Visual Proportion Bar background */}
+                <div 
+                  className={cn(
+                    "absolute bottom-0 left-0 h-0.5 transition-all duration-500",
+                    isZero ? "bg-transparent" : isCreditor ? "bg-emerald-500/60" : "bg-rose-500/60"
+                  )}
+                  style={{ width: `${barWidthPct}%` }}
+                />
 
-                <div className="text-right">
-                  <span className={cn(
-                    'font-mono text-sm font-bold block',
-                    isZero 
-                      ? 'text-slate-400' 
-                      : isCreditor 
-                        ? 'text-emerald-400' 
-                        : 'text-rose-400'
-                  )}>
-                    {isZero ? `${currencySymbol}0.00` : isCreditor ? `+${currencySymbol}${bal.toFixed(2)}` : `-${currencySymbol}${Math.abs(bal).toFixed(2)}`}
-                  </span>
-                  <span className="text-[11px] text-slate-500">
-                    {isZero ? 'Settled' : isCreditor ? 'gets back' : 'owes'}
-                  </span>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className={cn(
+                      'h-9 w-9 rounded-xl flex items-center justify-center text-xs font-bold border',
+                      isZero 
+                        ? 'bg-slate-800/80 text-slate-400 border-slate-700' 
+                        : isCreditor 
+                          ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/25' 
+                          : 'bg-rose-500/15 text-rose-300 border-rose-500/25'
+                    )}>
+                      {getInitials(member.name)}
+                    </div>
+                    <div>
+                      <span className="text-sm font-semibold text-slate-200 block">{member.name}</span>
+                      <span className="text-[11px] text-slate-400 capitalize">{member.status || 'Active Member'}</span>
+                    </div>
+                  </div>
+
+                  <div className="text-right">
+                    <span className={cn(
+                      'font-mono text-sm font-bold block tabular-nums',
+                      isZero 
+                        ? 'text-slate-400' 
+                        : isCreditor 
+                          ? 'text-emerald-400' 
+                          : 'text-rose-400'
+                    )}>
+                      {isZero ? `${currencySymbol}0.00` : isCreditor ? `+${currencySymbol}${bal.toFixed(2)}` : `-${currencySymbol}${Math.abs(bal).toFixed(2)}`}
+                    </span>
+                    <span className="text-[10px] text-slate-400 uppercase tracking-wider font-medium">
+                      {isZero ? 'Settled' : isCreditor ? 'Gets back' : 'Owes group'}
+                    </span>
+                  </div>
                 </div>
               </div>
             );

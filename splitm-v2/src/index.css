@@ -1,81 +1,108 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 
 @theme {
-  --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-  --font-mono: 'JetBrains Mono', monospace;
+  --font-sans: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
 
-  /* Fintech Dark Mode Tokens */
+  /* Fintech Obsidian Dark Theme Palette */
   --color-background: #090d16;
-  --color-surface: #0f172a;
-  --color-surface-hover: #172033;
-  --color-surface-card: #0d1322;
-  
+  --color-surface: #111827;
+  --color-surface-hover: #162032;
+  --color-surface-elevated: #1a2336;
+  --color-border: #1f293d;
+  --color-border-subtle: #172033;
+
+  /* Financial Accents */
   --color-primary: #6366f1;
   --color-primary-hover: #4f46e5;
-  --color-secondary: #1e293b;
-  
-  --color-danger: #f43f5e;
-  --color-danger-subtle: rgba(244, 63, 94, 0.12);
-  
   --color-success: #10b981;
-  --color-success-subtle: rgba(16, 185, 129, 0.12);
-  
-  --color-accent: #06b6d4;
-  --color-border: #1e293b;
-  --color-border-glow: rgba(99, 102, 241, 0.2);
+  --color-success-hover: #059669;
+  --color-danger: #f43f5e;
+  --color-danger-hover: #e11d48;
+  --color-warning: #f59e0b;
 }
 
 @layer base {
-  body {
-    @apply bg-background text-slate-100 antialiased font-sans selection:bg-primary/30 selection:text-white;
-    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
-  }
-
-  /* Smooth scrolling and focus outline reset */
   * {
-    border-color: #1e293b;
+    border-color: var(--color-border);
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: #f8fafc;
+    font-family: var(--font-sans);
+    letter-spacing: -0.011em;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Numeric legibility */
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
   }
 }
 
-/* Fintech Micro-Animation & Glow Utilities */
+/* Micro-animations and effects */
+@keyframes modalEnter {
+  0% {
+    opacity: 0;
+    transform: scale(0.96) translateY(8px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes pulseSubtle {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+}
+
+.animate-modal-enter {
+  animation: modalEnter 220ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-fade-in {
+  animation: fadeIn 180ms ease-out forwards;
+}
+
+/* Glassmorphism token */
 .glass-panel {
-  background: rgba(15, 23, 42, 0.75);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(17, 24, 39, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(31, 41, 61, 0.8);
 }
 
-.glass-card {
-  background: linear-gradient(135deg, rgba(26, 33, 53, 0.6) 0%, rgba(15, 23, 42, 0.8) 100%);
-  backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.07);
+.glass-modal {
+  background: rgba(17, 24, 39, 0.95);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(45, 59, 87, 0.85);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6), 0 0 40px rgba(99, 102, 241, 0.05);
 }
 
-.glow-success {
-  box-shadow: 0 0 20px -3px rgba(16, 185, 129, 0.25);
-}
-
-.glow-danger {
-  box-shadow: 0 0 20px -3px rgba(244, 63, 94, 0.25);
-}
-
-.glow-primary {
-  box-shadow: 0 0 25px -4px rgba(99, 102, 241, 0.35);
-}
-
-/* Custom scrollbars */
+/* Custom sleek scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
+
 ::-webkit-scrollbar-track {
   background: transparent;
 }
+
 ::-webkit-scrollbar-thumb {
-  background: #334155;
+  background: #1f293d;
   border-radius: 9999px;
 }
+
 ::-webkit-scrollbar-thumb:hover {
-  background: #475569;
+  background: #334155;
 }

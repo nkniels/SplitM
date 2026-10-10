@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { CaretRight, Wallet } from '@phosphor-icons/react';
+import { CaretRight, Wallet, ShareNetwork } from '@phosphor-icons/react';
 import { MemberBalancePopover, type RingMember } from './MemberBalancePopover';
+import { triggerHaptic } from '../../core/utils/haptics';
 
 export interface GroupCardData {
   id: string;
@@ -19,6 +20,9 @@ interface GroupRingCardProps {
   group: GroupCardData;
   isActive: boolean;
   onSelectGroup?: (groupId: string) => void;
+  onOpenPooledDrawer?: (group: GroupCardData) => void;
+  onShareReceipt?: (group: GroupCardData) => void;
+  onSettleMember?: (member: RingMember) => void;
   className?: string;
 }
 
@@ -56,6 +60,9 @@ export const GroupRingCard: React.FC<GroupRingCardProps> = ({
   group,
   isActive,
   onSelectGroup,
+  onOpenPooledDrawer,
+  onShareReceipt,
+  onSettleMember,
   className = '',
 }) => {
   const [selectedMember, setSelectedMember] = useState<RingMember | null>(null);
@@ -63,6 +70,7 @@ export const GroupRingCard: React.FC<GroupRingCardProps> = ({
 
   const handleAvatarClick = (e: React.MouseEvent, member: RingMember, index: number) => {
     e.stopPropagation();
+    triggerHaptic('light');
     if (selectedMember?.id === member.id) {
       setSelectedMember(null);
       return;
@@ -87,6 +95,7 @@ export const GroupRingCard: React.FC<GroupRingCardProps> = ({
   const handleCardClick = () => {
     setSelectedMember(null);
     if (!isActive && onSelectGroup) {
+      triggerHaptic('tear');
       onSelectGroup(group.id);
     }
   };
@@ -118,7 +127,24 @@ export const GroupRingCard: React.FC<GroupRingCardProps> = ({
           {/* Subtle Top Perforation Watermark */}
           <div className="absolute top-2 left-6 right-6 flex items-center justify-between text-[10px] font-mono tracking-widest text-muted/60 uppercase">
             <span>{group.category}</span>
-            <span>{isActive ? 'ACTIVE • 01' : 'TAP TO VIEW'}</span>
+            <div className="flex items-center gap-2">
+              {isActive && onShareReceipt && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    triggerHaptic('light');
+                    onShareReceipt(group);
+                  }}
+                  className="inline-flex items-center gap-1 text-[10px] font-mono text-muted hover:text-accent transition-colors py-0.5 px-2 rounded-lg bg-surface hover:bg-surface-hover border border-border-subtle shadow-xs"
+                  title="Share Group Receipt"
+                >
+                  <ShareNetwork size={11} weight="duotone" />
+                  <span>SHARE</span>
+                </button>
+              )}
+              <span>{isActive ? 'ACTIVE • 01' : 'TAP TO VIEW'}</span>
+            </div>
           </div>
 
           {/* Centered Content: Group Name & Summary Text */}
@@ -169,10 +195,18 @@ export const GroupRingCard: React.FC<GroupRingCardProps> = ({
                   </div>
 
                   {hasPooled ? (
-                    <div className="p-2.5 rounded-xl bg-background/50 border border-border-subtle">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        triggerHaptic('medium');
+                        onOpenPooledDrawer?.(group);
+                      }}
+                      className="p-2.5 rounded-xl bg-background/50 hover:bg-background/80 border border-border-subtle hover:border-accent text-left transition-all active:scale-[0.98] group/pot"
+                    >
                       <div className="flex items-center justify-between text-[10px] text-muted uppercase tracking-wider font-mono">
                         <span className="flex items-center gap-1">
-                          <Wallet size={11} weight="duotone" className="text-accent" />
+                          <Wallet size={11} weight="duotone" className="text-accent group-hover/pot:scale-110 transition-transform" />
                           Pooled MoMo
                         </span>
                         <span className="tabular-nums font-bold text-accent">{pooledPct}%</span>
@@ -187,7 +221,7 @@ export const GroupRingCard: React.FC<GroupRingCardProps> = ({
                           style={{ width: `${pooledPct}%` }}
                         />
                       </div>
-                    </div>
+                    </button>
                   ) : (
                     <div className="p-2.5 rounded-xl bg-background/50 border border-border-subtle">
                       <span className="text-[10px] text-muted uppercase tracking-wider block font-mono">
@@ -274,6 +308,10 @@ export const GroupRingCard: React.FC<GroupRingCardProps> = ({
           <MemberBalancePopover
             member={selectedMember}
             onClose={() => setSelectedMember(null)}
+            onSettle={(m) => {
+              setSelectedMember(null);
+              onSettleMember?.(m);
+            }}
             positionStyle={popoverCoords}
           />
         )}

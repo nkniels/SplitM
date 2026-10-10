@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Check, ArrowUpRight, ArrowDownRight } from '@phosphor-icons/react';
+import { X, Check, ArrowUpRight, ArrowDownRight, ArrowRight } from '@phosphor-icons/react';
 
 export interface RingMember {
   id: string;
@@ -14,12 +14,14 @@ export interface RingMember {
 interface MemberBalancePopoverProps {
   member: RingMember;
   onClose: () => void;
+  onSettle?: (member: RingMember) => void;
   positionStyle?: React.CSSProperties;
 }
 
 export const MemberBalancePopover: React.FC<MemberBalancePopoverProps> = ({
   member,
   onClose,
+  onSettle,
   positionStyle,
 }) => {
   const isPositive = member.balanceXaf > 0;
@@ -102,6 +104,17 @@ export const MemberBalancePopover: React.FC<MemberBalancePopoverProps> = ({
           ? 'All settled up'
           : 'Owes to the group'}
       </p>
+
+      {member.balanceXaf !== 0 && onSettle && (
+        <button
+          type="button"
+          onClick={() => onSettle(member)}
+          className="mt-2.5 w-full py-1.5 px-2 rounded-xl bg-accent text-white font-mono text-[11px] font-semibold flex items-center justify-center gap-1 shadow-sm hover:opacity-90 active:scale-[0.98] transition-all"
+        >
+          <span>Settle via MoMo</span>
+          <ArrowRight size={12} weight="bold" />
+        </button>
+      )}
     </div>
   );
 };

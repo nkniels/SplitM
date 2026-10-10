@@ -13,6 +13,13 @@ import type { Group } from '../core/types';
 import { GroupRingCard, type GroupCardData } from '../components/dashboard/GroupRingCard';
 import { BottomNav, type NavTabId } from '../components/dashboard/BottomNav';
 import { AddActionSheet } from '../components/dashboard/AddActionSheet';
+import { PooledMoMoDrawer } from '../components/dashboard/PooledMoMoDrawer';
+import { DebtSettlementModal } from '../components/dashboard/DebtSettlementModal';
+import { GroupReceiptShareModal } from '../components/dashboard/GroupReceiptShareModal';
+import { RecentReceiptsDrawer } from '../components/dashboard/RecentReceiptsDrawer';
+import { UserProfileModal } from '../components/dashboard/UserProfileModal';
+import { triggerHaptic } from '../core/utils/haptics';
+import type { RingMember } from '../components/dashboard/MemberBalancePopover';
 import { ExpenseForm } from '../components/expenses/ExpenseForm';
 import GroupForm from '../components/groups/GroupForm';
 
@@ -194,6 +201,87 @@ export default function DashboardPage() {
   const [showExpenseForm, setShowExpenseForm] = useState(false);
   const [showGroupForm, setShowGroupForm] = useState(false);
 
+  // Feature Expansion States (Pooled MoMo, 1-Tap Settle, WhatsApp Share, Receipts, Profile)
+  const [localGroups, setLocalGroups] = useState<GroupCardData[]>(INITIAL_GROUPS);
+  const [isPooledDrawerOpen, setIsPooledDrawerOpen] = useState(false);
+  const [isShareReceiptOpen, setIsShareReceiptOpen] = useState(false);
+  const [isDebtSettlementOpen, setIsDebtSettlementOpen] = useState(false);
+  const [settlingMember, setSettlingMember] = useState<RingMember | null>(null);
+  const [isRecentReceiptsOpen, setIsRecentReceiptsOpen] = useState(false);
+  const [isUserProfileOpen, setIsUserProfileOpen] = useState(false);
+  const [userProfile, setUserProfile] = useState({
+    name: 'Bryan T. (You)',
+    avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=160&h=160&q=80',
+    provider: 'orange' as 'mtn' | 'orange',
+  });
+
+  // Handle Pooled MoMo Contribution
+  const handleContributeSuccess = (groupId: string, amount: number) => {
+    setLocalGroups((prev) =>
+      prev.map((g) => {
+        if (g.id !== groupId) return g;
+        const target = g.pooledTarget ?? g.totalExpenses;
+        const newCollected = Math.min(target, (g.pooledCollected ?? 0) + amount);
+        return {
+          ...g,
+          pooledCollected: newCollected,
+        };
+      })
+    );
+  };
+
+  // Handle 1-Tap Debt Settlement with Zero-Sum Invariant preservation
+  const handleConfirmSettlement = (targetMemberId: string, amount: number) => {
+    setLocalGroups((prev) =>
+      prev.map((g) => {
+        if (g.id !== activeGroupId) return g;
+        const updatedMembers = g.members.map((m) => {
+          if (m.id === targetMemberId) {
+            return { ...m, balanceXaf: 0 };
+          }
+          if (m.name.includes('You')) {
+            const nextBal = m.balanceXaf + amount;
+            return { ...m, balanceXaf: nextBal };
+          }
+          return m;
+        });
+
+        const currentUserMember = updatedMembers.find((m) => m.name.includes('You'));
+        const userBal = currentUserMember?.balanceXaf ?? 0;
+        const userBalanceType = userBal > 0 ? 'owed' : userBal < 0 ? 'owes' : 'settled';
+        const summaryText =
+          userBal > 0
+            ? `You are owed ${userBal.toLocaleString('en-US')} XAF`
+            : userBal < 0
+            ? `You owe ${Math.abs(userBal).toLocaleString('en-US')} XAF`
+            : 'All balances settled';
+
+        return {
+          ...g,
+          members: updatedMembers,
+          userBalanceType,
+          userBalanceAmount: Math.abs(userBal),
+          summaryText,
+        };
+      })
+    );
+  };
+
+  // Handle User Profile update
+  const handleSaveProfile = (name: string, avatarUrl: string, provider: 'mtn' | 'orange') => {
+    setUserProfile({ name, avatarUrl, provider });
+    setLocalGroups((prev) =>
+      prev.map((g) => ({
+        ...g,
+        members: g.members.map((m) =>
+          m.name.includes('You')
+            ? { ...m, name: `${name.replace(' (You)', '')} (You)`, avatarUrl, paymentProvider: provider }
+            : m
+        ),
+      }))
+    );
+  };
+
   // Load groups on mount and subscribe to real-time updates from Firestore
   useEffect(() => {
     if (currentUser?.uid) {
@@ -238,7 +326,7 @@ export default function DashboardPage() {
   const groups = useMemo<GroupCardData[]>(() => {
     const groupList = Object.values(firestoreGroups);
     if (!currentUser || groupList.length === 0) {
-      return INITIAL_GROUPS;
+      return localGroups;
     }
 
     return groupList.map((grp) => {
@@ -301,7 +389,7 @@ export default function DashboardPage() {
         members: ringMembers.length > 0 ? ringMembers : INITIAL_GROUPS[0].members,
       };
     });
-  }, [firestoreGroups, firestoreMembers, firestoreExpenses, currentUser]);
+  }, [firestoreGroups, firestoreMembers, firestoreExpenses, currentUser, localGroups]);
 
   // Light / Dark Theme toggle helper
   const [isDark, setIsDark] = useState(() => {
@@ -382,6 +470,12 @@ export default function DashboardPage() {
             group={activeGroup}
             isActive={true}
             onSelectGroup={handleSelectGroup}
+            onOpenPooledDrawer={() => setIsPooledDrawerOpen(true)}
+            onShareReceipt={() => setIsShareReceiptOpen(true)}
+            onSettleMember={(member) => {
+              setSettlingMember(member);
+              setIsDebtSettlementOpen(true);
+            }}
           />
 
           {/* Section Divider & Perforation Marker */}
@@ -402,6 +496,19 @@ export default function DashboardPage() {
                 group={group}
                 isActive={false}
                 onSelectGroup={handleSelectGroup}
+                onOpenPooledDrawer={() => {
+                  handleSelectGroup(group.id);
+                  setIsPooledDrawerOpen(true);
+                }}
+                onShareReceipt={() => {
+                  handleSelectGroup(group.id);
+                  setIsShareReceiptOpen(true);
+                }}
+                onSettleMember={(member) => {
+                  handleSelectGroup(group.id);
+                  setSettlingMember(member);
+                  setIsDebtSettlementOpen(true);
+                }}
               />
             ))}
           </div>
@@ -420,12 +527,17 @@ export default function DashboardPage() {
           activeTab={activeTab}
           onTabChange={(tab) => {
             setActiveTab(tab);
-            if (tab !== 'dashboard') {
-              // Soft stub indication for other tabs
-              console.log(`Switched to tab: ${tab}`);
+            triggerHaptic('light');
+            if (tab === 'history') {
+              setIsRecentReceiptsOpen(true);
+            } else if (tab === 'profile') {
+              setIsUserProfileOpen(true);
             }
           }}
-          onAddClick={() => setIsAddSheetOpen(true)}
+          onAddClick={() => {
+            triggerHaptic('medium');
+            setIsAddSheetOpen(true);
+          }}
         />
 
         {/* Bottom Sheet Modal for Adding Expense / Pooled MoMo Payment */}
@@ -441,8 +553,58 @@ export default function DashboardPage() {
             }
           }}
           onStartPooled={() => {
-            alert(`Pooled MoMo Payment: Starting group pot for "${activeGroup.name}". Contributors can pay with MTN MoMo & Orange Money.`);
+            setIsAddSheetOpen(false);
+            setIsPooledDrawerOpen(true);
           }}
+        />
+
+        {/* 1. Interactive Pooled MoMo Pot Drawer */}
+        <PooledMoMoDrawer
+          isOpen={isPooledDrawerOpen}
+          group={activeGroup}
+          onClose={() => setIsPooledDrawerOpen(false)}
+          onContributeSuccess={handleContributeSuccess}
+        />
+
+        {/* 2. 1-Tap Debt Settlement Modal */}
+        <DebtSettlementModal
+          isOpen={isDebtSettlementOpen}
+          targetMember={settlingMember}
+          currentUserName={userProfile.name}
+          onClose={() => {
+            setIsDebtSettlementOpen(false);
+            setSettlingMember(null);
+          }}
+          onConfirmSettlement={handleConfirmSettlement}
+        />
+
+        {/* 3. WhatsApp Receipt Share Modal */}
+        <GroupReceiptShareModal
+          isOpen={isShareReceiptOpen}
+          group={activeGroup}
+          onClose={() => setIsShareReceiptOpen(false)}
+        />
+
+        {/* 4. Recent Receipts Audit Trail Drawer */}
+        <RecentReceiptsDrawer
+          isOpen={isRecentReceiptsOpen}
+          group={activeGroup}
+          onClose={() => {
+            setIsRecentReceiptsOpen(false);
+            setActiveTab('dashboard');
+          }}
+        />
+
+        {/* 5. User Profile Preferences Modal */}
+        <UserProfileModal
+          isOpen={isUserProfileOpen}
+          currentName={userProfile.name}
+          currentAvatarUrl={userProfile.avatarUrl}
+          onClose={() => {
+            setIsUserProfileOpen(false);
+            setActiveTab('dashboard');
+          }}
+          onSaveProfile={handleSaveProfile}
         />
 
         {/* Real Expense Creation Modal wired to Firestore */}

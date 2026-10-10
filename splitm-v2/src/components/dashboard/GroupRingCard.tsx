@@ -238,13 +238,18 @@ export const GroupRingCard: React.FC<GroupRingCardProps> = ({
               }`}
               aria-label={`View details for ${member.name}`}
             >
-              {member.avatarUrl ? (
+              {member.avatarUrl && (
                 <img
                   src={member.avatarUrl}
                   alt={member.name}
+                  loading="lazy"
                   className="w-full h-full rounded-full object-cover"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                  }}
                 />
-              ) : (
+              )}
+              {!member.avatarUrl && (
                 <span className="text-xs font-semibold text-primary select-none">
                   {member.initials}
                 </span>

@@ -33,6 +33,7 @@ const INITIAL_GROUPS: GroupCardData[] = [
       {
         id: 'm1',
         name: 'Amara K.',
+        avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=160&h=160&q=80',
         initials: 'AK',
         balanceXaf: 12500,
         paymentProvider: 'mtn',
@@ -40,6 +41,7 @@ const INITIAL_GROUPS: GroupCardData[] = [
       {
         id: 'm2',
         name: 'Bryan T. (You)',
+        avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=160&h=160&q=80',
         initials: 'BT',
         balanceXaf: -4500,
         paymentProvider: 'orange',
@@ -47,6 +49,7 @@ const INITIAL_GROUPS: GroupCardData[] = [
       {
         id: 'm3',
         name: 'Cécile N.',
+        avatarUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=160&h=160&q=80',
         initials: 'CN',
         balanceXaf: -3200,
         paymentProvider: 'mtn',
@@ -54,6 +57,7 @@ const INITIAL_GROUPS: GroupCardData[] = [
       {
         id: 'm4',
         name: 'Danielle M.',
+        avatarUrl: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&w=160&h=160&q=80',
         initials: 'DM',
         balanceXaf: 8000,
         paymentProvider: 'mtn',
@@ -61,6 +65,7 @@ const INITIAL_GROUPS: GroupCardData[] = [
       {
         id: 'm5',
         name: 'Eric F.',
+        avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=160&h=160&q=80',
         initials: 'EF',
         balanceXaf: -12800,
         paymentProvider: 'orange',
@@ -68,6 +73,7 @@ const INITIAL_GROUPS: GroupCardData[] = [
       {
         id: 'm6',
         name: 'Franck O.',
+        avatarUrl: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=160&h=160&q=80',
         initials: 'FO',
         balanceXaf: 0,
         paymentProvider: 'cash',
@@ -88,6 +94,7 @@ const INITIAL_GROUPS: GroupCardData[] = [
       {
         id: 'k1',
         name: 'Bryan T. (You)',
+        avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=160&h=160&q=80',
         initials: 'BT',
         balanceXaf: 16000,
         paymentProvider: 'orange',
@@ -95,6 +102,7 @@ const INITIAL_GROUPS: GroupCardData[] = [
       {
         id: 'k2',
         name: 'Nadine B.',
+        avatarUrl: 'https://images.unsplash.com/photo-1589156280159-27698a70f29e?auto=format&fit=crop&w=160&h=160&q=80',
         initials: 'NB',
         balanceXaf: -6000,
         paymentProvider: 'mtn',
@@ -102,6 +110,7 @@ const INITIAL_GROUPS: GroupCardData[] = [
       {
         id: 'k3',
         name: 'Paul E.',
+        avatarUrl: 'https://images.unsplash.com/photo-1522529599102-193c0d76b5b6?auto=format&fit=crop&w=160&h=160&q=80',
         initials: 'PE',
         balanceXaf: -10000,
         paymentProvider: 'orange',
@@ -109,6 +118,7 @@ const INITIAL_GROUPS: GroupCardData[] = [
       {
         id: 'k4',
         name: 'Sandra M.',
+        avatarUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=160&h=160&q=80',
         initials: 'SM',
         balanceXaf: 0,
         paymentProvider: 'cash',
@@ -116,6 +126,7 @@ const INITIAL_GROUPS: GroupCardData[] = [
       {
         id: 'k5',
         name: 'Thierry K.',
+        avatarUrl: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=160&h=160&q=80',
         initials: 'TK',
         balanceXaf: 0,
         paymentProvider: 'mtn',
@@ -136,6 +147,7 @@ const INITIAL_GROUPS: GroupCardData[] = [
       {
         id: 'l1',
         name: 'Bryan T. (You)',
+        avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=160&h=160&q=80',
         initials: 'BT',
         balanceXaf: 0,
         paymentProvider: 'orange',
@@ -143,6 +155,7 @@ const INITIAL_GROUPS: GroupCardData[] = [
       {
         id: 'l2',
         name: 'Alain K.',
+        avatarUrl: 'https://images.unsplash.com/photo-1501196354995-cbb51c65aaea?auto=format&fit=crop&w=160&h=160&q=80',
         initials: 'AK',
         balanceXaf: 0,
         paymentProvider: 'mtn',
@@ -150,6 +163,7 @@ const INITIAL_GROUPS: GroupCardData[] = [
       {
         id: 'l3',
         name: 'Linda W.',
+        avatarUrl: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=160&h=160&q=80',
         initials: 'LW',
         balanceXaf: 0,
         paymentProvider: 'orange',
@@ -157,6 +171,7 @@ const INITIAL_GROUPS: GroupCardData[] = [
       {
         id: 'l4',
         name: 'Samuel D.',
+        avatarUrl: 'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?auto=format&fit=crop&w=160&h=160&q=80',
         initials: 'SD',
         balanceXaf: 0,
         paymentProvider: 'cash',

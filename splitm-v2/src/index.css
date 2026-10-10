@@ -2,50 +2,64 @@
 
 :root {
   /* Typography */
-  --font-sans: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-serif: 'Fraunces', Georgia, serif;
+  --font-sans: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
 
-  /* Clean Light Theme Palette */
-  --color-background: #f8fafc;
-  --color-surface: #ffffff;
-  --color-surface-hover: #f1f5f9;
-  --color-surface-elevated: #ffffff;
-  --color-border: #e2e8f0;
-  --color-border-subtle: #f1f5f9;
-  --text-primary: #0f172a;
-  --text-muted: #64748b;
+  /* Paper Receipt Theme — Light */
+  --color-background: #F7F4EE;
+  --color-surface: #FFFFFF;
+  --color-surface-hover: #F2EFE7;
+  --color-surface-elevated: #FFFFFF;
+  --color-border: #E5E0D5;
+  --color-border-subtle: #EFECE4;
+  --text-primary: #15291F;
+  --text-muted: #6E736B;
 
-  /* Financial Accents */
-  --color-primary: #4f46e5;
-  --color-primary-hover: #4338ca;
-  --color-success: #10b981;
-  --color-success-hover: #059669;
-  --color-danger: #f43f5e;
-  --color-danger-hover: #e11d48;
-  --color-warning: #f59e0b;
+  /* Primary Ink & Warm Terracotta Accent */
+  --color-primary: #15291F;
+  --color-primary-hover: #1E3B2C;
+  --color-accent: #D95D39;
+  --color-accent-hover: #C24E2B;
+  --color-accent-subtle: #FDF2EE;
+  --color-success: #1E7E51;
+  --color-success-hover: #166440;
+  --color-danger: #D95D39;
+  --color-danger-hover: #C24E2B;
+  --color-warning: #D9822B;
 
-  --glass-bg: 255, 255, 255;
-  --glass-border: 226, 232, 240;
+  --color-tear-notch: #F7F4EE;
+  --color-tear-border: #D8D2C5;
 }
 
 html.dark {
-  /* Fintech Obsidian Dark Theme Palette (Default) */
-  --color-background: #090d16;
-  --color-surface: #111827;
-  --color-surface-hover: #162032;
-  --color-surface-elevated: #1a2336;
-  --color-border: #1f293d;
-  --color-border-subtle: #172033;
-  --text-primary: #f8fafc;
-  --text-muted: #94a3b8;
+  /* Paper Receipt Theme — Warm Charcoal Dark (Never #000000) */
+  --color-background: #191816;
+  --color-surface: #22201D;
+  --color-surface-hover: #2A2723;
+  --color-surface-elevated: #282521;
+  --color-border: #36322C;
+  --color-border-subtle: #2C2924;
+  --text-primary: #F4F1EA;
+  --text-muted: #A39E93;
 
-  --color-primary: #6366f1;
-  --color-primary-hover: #4f46e5;
-  --glass-bg: 17, 24, 39;
-  --glass-border: 31, 41, 61;
+  --color-primary: #EAE7E0;
+  --color-primary-hover: #FFFFFF;
+  --color-accent: #E0643F;
+  --color-accent-hover: #CC5532;
+  --color-accent-subtle: #2E211D;
+  --color-success: #34A872;
+  --color-success-hover: #298C5E;
+  --color-danger: #E0643F;
+  --color-danger-hover: #CC5532;
+  --color-warning: #E09848;
+
+  --color-tear-notch: #141311;
+  --color-tear-border: #4D473E;
 }
 
 @theme {
+  --font-serif: var(--font-serif);
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
   --color-background: var(--color-background);
@@ -56,6 +70,9 @@ html.dark {
   --color-border-subtle: var(--color-border-subtle);
   --color-primary: var(--color-primary);
   --color-primary-hover: var(--color-primary-hover);
+  --color-accent: var(--color-accent);
+  --color-accent-hover: var(--color-accent-hover);
+  --color-accent-subtle: var(--color-accent-subtle);
   --color-success: var(--color-success);
   --color-success-hover: var(--color-success-hover);
   --color-danger: var(--color-danger);
@@ -113,12 +130,32 @@ html.dark {
   animation: fadeIn 180ms ease-out forwards;
 }
 
-/* Glassmorphism tokens */
-.glass-panel {
-  background: rgba(var(--glass-bg), 0.85);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(var(--glass-border), 0.8);
+/* Typography Utilities */
+.font-serif {
+  font-family: var(--font-serif);
+}
+
+.font-sans {
+  font-family: var(--font-sans);
+}
+
+.font-mono {
+  font-family: var(--font-mono);
+}
+
+/* Receipt Theme Texture & Accents */
+.paper-texture {
+  background-color: var(--color-background);
+  color: var(--text-primary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 .glass-modal {

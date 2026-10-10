@@ -57,6 +57,8 @@ export default function App() {
       <Suspense fallback={<div className="flex h-screen items-center justify-center bg-background text-slate-100">Loading...</div>}>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/preview" element={<DashboardPage />} />
+          <Route path="/dashboard" element={<DashboardPage />} />
           <Route element={<AuthGuard />}>
             <Route element={<AppShellLayout />}>
               <Route path="/" element={<DashboardPage />} />

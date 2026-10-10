@@ -1,216 +1,294 @@
-import { useEffect, useMemo, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { PlusCircle, Users } from 'lucide-react';
-import type { RootState, AppDispatch } from '../core/store/store';
-import { loadGroups, loadMembersThunk } from '../modules/groups/group.thunks';
-import { loadExpenses } from '../modules/expenses/expense.thunks';
-import { setGroups, setMembers } from '../modules/groups/group.slice';
-import { setExpenses } from '../modules/expenses/expense.slice';
-import { subscribeToUserGroups, subscribeToGroupMembers } from '../modules/groups/group.service';
-import { subscribeToGroupExpenses } from '../modules/expenses/expense.service';
-import { ExpenseList } from '../components/expenses/ExpenseList';
-import { ExpenseForm } from '../components/expenses/ExpenseForm';
-import GroupForm from '../components/groups/GroupForm';
-import MembersPanel from '../components/groups/MembersPanel';
-import { SettlementsView } from '../components/settlements/SettlementsView';
-import { Button } from '../components/ui/Button';
-import { cn } from '../core/utils/helpers';
+import { useState } from 'react';
+import { Sun, Moon } from '@phosphor-icons/react';
+import { GroupRingCard, type GroupCardData } from '../components/dashboard/GroupRingCard';
+import { BottomNav, type NavTabId } from '../components/dashboard/BottomNav';
+import { AddActionSheet } from '../components/dashboard/AddActionSheet';
+
+// Initial Mock Groups & Members following SplitM's exact domain:
+// Group expenses (greedy debt settlement) & Pooled MoMo payments (MTN/Orange Money)
+const INITIAL_GROUPS: GroupCardData[] = [
+  {
+    id: 'grp-bastos',
+    name: 'Bastos Apartment',
+    category: 'Flatmates • Yaoundé',
+    summaryText: 'You owe 4,500 XAF',
+    userBalanceType: 'owes',
+    userBalanceAmount: 4500,
+    totalExpenses: 185000,
+    pooledCollected: 60000,
+    pooledTarget: 80000,
+    members: [
+      {
+        id: 'm1',
+        name: 'Amara K.',
+        initials: 'AK',
+        balanceXaf: 12500,
+        paymentProvider: 'mtn',
+      },
+      {
+        id: 'm2',
+        name: 'Bryan T. (You)',
+        initials: 'BT',
+        balanceXaf: -4500,
+        paymentProvider: 'orange',
+      },
+      {
+        id: 'm3',
+        name: 'Cécile N.',
+        initials: 'CN',
+        balanceXaf: -3200,
+        paymentProvider: 'mtn',
+      },
+      {
+        id: 'm4',
+        name: 'Danielle M.',
+        initials: 'DM',
+        balanceXaf: 8000,
+        paymentProvider: 'mtn',
+      },
+      {
+        id: 'm5',
+        name: 'Eric F.',
+        initials: 'EF',
+        balanceXaf: -12800,
+        paymentProvider: 'orange',
+      },
+      {
+        id: 'm6',
+        name: 'Franck O.',
+        initials: 'FO',
+        balanceXaf: 0,
+        paymentProvider: 'cash',
+      },
+    ],
+  },
+  {
+    id: 'grp-kribi',
+    name: 'Kribi Beach Trip',
+    category: 'Travel • Coastal',
+    summaryText: 'You are owed 16,000 XAF',
+    userBalanceType: 'owed',
+    userBalanceAmount: 16000,
+    totalExpenses: 320000,
+    pooledCollected: 320000,
+    pooledTarget: 320000,
+    members: [
+      {
+        id: 'k1',
+        name: 'Bryan T. (You)',
+        initials: 'BT',
+        balanceXaf: 16000,
+        paymentProvider: 'orange',
+      },
+      {
+        id: 'k2',
+        name: 'Nadine B.',
+        initials: 'NB',
+        balanceXaf: -6000,
+        paymentProvider: 'mtn',
+      },
+      {
+        id: 'k3',
+        name: 'Paul E.',
+        initials: 'PE',
+        balanceXaf: -10000,
+        paymentProvider: 'orange',
+      },
+      {
+        id: 'k4',
+        name: 'Sandra M.',
+        initials: 'SM',
+        balanceXaf: 0,
+        paymentProvider: 'cash',
+      },
+      {
+        id: 'k5',
+        name: 'Thierry K.',
+        initials: 'TK',
+        balanceXaf: 0,
+        paymentProvider: 'mtn',
+      },
+    ],
+  },
+  {
+    id: 'grp-lunch',
+    name: 'Yaoundé Tech Lunch',
+    category: 'Weekly • Work',
+    summaryText: 'All balances settled',
+    userBalanceType: 'settled',
+    userBalanceAmount: 0,
+    totalExpenses: 45000,
+    pooledCollected: 45000,
+    pooledTarget: 45000,
+    members: [
+      {
+        id: 'l1',
+        name: 'Bryan T. (You)',
+        initials: 'BT',
+        balanceXaf: 0,
+        paymentProvider: 'orange',
+      },
+      {
+        id: 'l2',
+        name: 'Alain K.',
+        initials: 'AK',
+        balanceXaf: 0,
+        paymentProvider: 'mtn',
+      },
+      {
+        id: 'l3',
+        name: 'Linda W.',
+        initials: 'LW',
+        balanceXaf: 0,
+        paymentProvider: 'orange',
+      },
+      {
+        id: 'l4',
+        name: 'Samuel D.',
+        initials: 'SD',
+        balanceXaf: 0,
+        paymentProvider: 'cash',
+      },
+    ],
+  },
+];
 
 export default function DashboardPage() {
-  const dispatch = useDispatch<AppDispatch>();
+  const [groups] = useState<GroupCardData[]>(INITIAL_GROUPS);
+  const [activeGroupId, setActiveGroupId] = useState<string>(INITIAL_GROUPS[0].id);
+  const [activeTab, setActiveTab] = useState<NavTabId>('dashboard');
+  const [isAddSheetOpen, setIsAddSheetOpen] = useState(false);
 
-  const currentUser = useSelector((state: RootState) => state.auth.user);
-  const groups = useSelector((state: RootState) => state.groups.groups);
-  const activeGroupId = useSelector((state: RootState) => state.groups.activeGroupId);
-  const members = useSelector((state: RootState) => state.groups.members);
+  // Light / Dark Theme toggle helper
+  const [isDark, setIsDark] = useState(() => {
+    return typeof document !== 'undefined' && document.documentElement.classList.contains('dark');
+  });
 
-  const [showExpenseForm, setShowExpenseForm] = useState(false);
-  const [showGroupForm, setShowGroupForm] = useState(false);
-  const [showMembersPanel, setShowMembersPanel] = useState(false);
-
-  // Load groups on mount and subscribe to real-time updates from Firestore
-  useEffect(() => {
-    void dispatch(loadGroups());
-    if (currentUser?.uid) {
-      const unsub = subscribeToUserGroups(currentUser.uid, (freshGroups) => {
-        dispatch(setGroups(freshGroups));
-      });
-      return () => unsub();
+  const toggleTheme = () => {
+    const nextDark = !isDark;
+    setIsDark(nextDark);
+    if (nextDark) {
+      document.documentElement.classList.add('dark');
+      try { localStorage.setItem('splitm_theme', 'dark'); } catch (_) {}
+      const meta = document.getElementById('theme-color-meta');
+      if (meta) meta.setAttribute('content', '#191816');
+    } else {
+      document.documentElement.classList.remove('dark');
+      try { localStorage.setItem('splitm_theme', 'light'); } catch (_) {}
+      const meta = document.getElementById('theme-color-meta');
+      if (meta) meta.setAttribute('content', '#F7F4EE');
     }
-  }, [dispatch, currentUser?.uid]);
+  };
 
-  // When active group changes, load its expenses and members with real-time listeners
-  useEffect(() => {
-    if (activeGroupId) {
-      void dispatch(loadExpenses(activeGroupId));
-      void dispatch(loadMembersThunk(activeGroupId));
+  // Swap group positions smoothly when an inactive card is tapped
+  const handleSelectGroup = (newActiveId: string) => {
+    setActiveGroupId(newActiveId);
+  };
 
-      const unsubExpenses = subscribeToGroupExpenses(activeGroupId, (freshExpenses) => {
-        dispatch(setExpenses(freshExpenses));
-      });
-
-      const unsubMembers = subscribeToGroupMembers(activeGroupId, (freshMembers) => {
-        dispatch(setMembers(freshMembers));
-      });
-
-      return () => {
-        unsubExpenses();
-        unsubMembers();
-      };
-    }
-  }, [dispatch, activeGroupId]);
-
-  const activeGroup = activeGroupId ? groups[activeGroupId] : undefined;
-  const activeMembers = activeGroupId
-
-    ? Object.values(members).filter((m) => m.groupId === activeGroupId)
-    : [];
-
-  const hasGroups = Object.keys(groups).length > 0;
-
-  // Budget tracking
-  const expenses = useSelector((state: RootState) => state.expenses.expenses);
-  const totalSpent = useMemo(() => {
-    if (!activeGroupId) return 0;
-    return Object.values(expenses)
-      .filter(e => e.groupId === activeGroupId && !e.settled)
-      .reduce((sum, e) => sum + e.amount, 0);
-  }, [expenses, activeGroupId]);
-  const budget = activeGroup?.budget ?? 0;
-  const budgetPct = budget > 0 ? Math.min((totalSpent / budget) * 100, 100) : 0;
-  const overBudget = budget > 0 && totalSpent > budget;
+  const activeGroup = groups.find((g) => g.id === activeGroupId) || groups[0];
+  const otherGroups = groups.filter((g) => g.id !== activeGroupId);
 
   return (
-    <div className="space-y-6">
-      {/* Header row */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-100">
-            {activeGroup ? activeGroup.name : 'Dashboard'}
-          </h1>
-          {activeGroup?.description && (
-            <p className="text-slate-500 text-sm mt-0.5">{activeGroup.description}</p>
-          )}
-        </div>
-
-        <div className="flex items-center gap-2">
-          {activeGroup && (
-            <Button
-              variant="outline"
-              size="sm"
-              leftIcon={<Users className="h-4 w-4" />}
-              onClick={() => setShowMembersPanel(true)}
-            >
-              Members
-            </Button>
-          )}
-          {activeGroup && activeMembers.length > 0 && (
-            <Button
-              variant="primary"
-              leftIcon={<PlusCircle className="h-4 w-4" />}
-              onClick={() => setShowExpenseForm(true)}
-            >
-              Add Expense
-            </Button>
-          )}
-        </div>
-      </div>
-
-      {/* Budget indicator */}
-      {activeGroup && budget > 0 && (
-        <div className="bg-surface border border-slate-700 rounded-lg px-4 py-3">
-          <div className="flex justify-between items-center mb-1.5">
-            <span className="text-xs text-slate-400 font-medium uppercase tracking-wide">Budget</span>
-            <span className={cn('text-xs font-semibold', overBudget ? 'text-danger' : 'text-slate-300')}>
-              {activeGroup.currency} {totalSpent.toFixed(2)} / {budget.toFixed(2)}
-              {overBudget && ' — over budget!'}
+    <div className="min-h-screen bg-background text-primary selection:bg-accent/20 transition-colors duration-200">
+      {/* Mobile Screen Container: Edge-to-edge portrait on mobile (<768px), elegant centered phone canvas on larger screens */}
+      <div className="w-full max-w-md mx-auto min-h-screen flex flex-col justify-between relative shadow-sm">
+        {/* Top Header Bar */}
+        <header className="px-5 pt-4 pb-2 flex items-center justify-between z-20">
+          <div className="flex items-center gap-2">
+            <span className="font-serif font-bold text-xl tracking-tight text-primary">
+              SplitM
+            </span>
+            <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded-full bg-border-subtle text-muted">
+              Receipt Ledger
             </span>
           </div>
-          <div className="h-1.5 bg-slate-700 rounded-full overflow-hidden">
-            <div
-              className={cn('h-full rounded-full transition-all duration-500', overBudget ? 'bg-danger' : 'bg-primary')}
-              style={{ width: `${budgetPct}%` }}
-              role="progressbar"
-              aria-valuenow={Math.round(budgetPct)}
-              aria-valuemin={0}
-              aria-valuemax={100}
-              aria-label={`${Math.round(budgetPct)}% of budget used`}
-            />
-          </div>
-        </div>
-      )}
 
-      {/* No groups state */}
-      {!hasGroups && (
-        <div className="flex flex-col items-center justify-center py-24 text-center">
-          <div className="h-16 w-16 rounded-full bg-slate-800 flex items-center justify-center mb-4">
-            <Users className="h-8 w-8 text-slate-500" aria-hidden="true" />
+          <div className="flex items-center gap-1.5">
+            {/* Quick theme toggle button */}
+            <button
+              onClick={toggleTheme}
+              className="p-2 rounded-xl text-muted hover:text-primary hover:bg-surface transition-colors"
+              aria-label={isDark ? 'Switch to light paper' : 'Switch to warm charcoal dark'}
+              title={isDark ? 'Switch to light paper' : 'Switch to warm charcoal dark'}
+            >
+              {isDark ? (
+                <Sun size={18} weight="duotone" className="text-amber-400" />
+              ) : (
+                <Moon size={18} weight="duotone" className="text-slate-600" />
+              )}
+            </button>
           </div>
-          <h2 className="text-xl font-semibold text-slate-200 mb-2">Welcome to SplitM</h2>
-          <p className="text-slate-500 text-sm mb-6 max-w-xs">
-            Create a group to start splitting expenses with friends, family, or coworkers.
-          </p>
-          <Button variant="primary" onClick={() => setShowGroupForm(true)}>
-            Create your first group
-          </Button>
-        </div>
-      )}
+        </header>
 
-      {/* Group exists but no members */}
-      {activeGroup && activeMembers.length === 0 && (
-        <div className="bg-surface border border-slate-700 rounded-lg p-5 flex items-center justify-between">
-          <div>
-            <p className="text-slate-200 font-medium">Add members to start tracking expenses</p>
-            <p className="text-slate-500 text-sm mt-0.5">
-              Invite people to this group before adding expenses.
+        {/* Main Content Area (The "Dashboard" from the sketch) */}
+        <main
+          className="flex-1 px-4 pt-1 pb-24 overflow-y-auto"
+          style={{ scrollBehavior: 'smooth' }}
+        >
+          {/* Active Group Card Header Label */}
+          <div className="flex items-center justify-between px-1 mb-1 text-[11px] font-mono tracking-wider text-muted uppercase">
+            <span>Active Group</span>
+            <span>Tap avatar for balance</span>
+          </div>
+
+          {/* 1. Active Group Card with Circular Avatar Ring */}
+          <GroupRingCard
+            group={activeGroup}
+            isActive={true}
+            onSelectGroup={handleSelectGroup}
+          />
+
+          {/* Section Divider & Perforation Marker */}
+          <div className="mt-8 mb-4 px-2 flex items-center justify-between">
+            <span className="text-xs font-mono font-medium text-muted uppercase tracking-wider">
+              Other Groups ({otherGroups.length})
+            </span>
+            <span className="text-[10px] font-mono text-muted/70">
+              Tap card to switch active
+            </span>
+          </div>
+
+          {/* 2. Scrollable List of Additional Group Cards */}
+          <div className="space-y-6">
+            {otherGroups.map((group) => (
+              <GroupRingCard
+                key={group.id}
+                group={group}
+                isActive={false}
+                onSelectGroup={handleSelectGroup}
+              />
+            ))}
+          </div>
+
+          {/* End of Receipt Paper Watermark */}
+          <div className="mt-8 mb-4 text-center">
+            <div className="w-16 h-[1px] bg-border mx-auto mb-2" />
+            <p className="text-[10px] font-mono text-muted/60 tracking-widest uppercase">
+              End of Active Ledger • SplitM PWA
             </p>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            leftIcon={<Users className="h-4 w-4" />}
-            onClick={() => setShowMembersPanel(true)}
-          >
-            Manage Members
-          </Button>
-        </div>
-      )}
+        </main>
 
-      {/* Expense list + Settlements panel */}
-      {activeGroup && activeMembers.length > 0 && activeGroupId && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
-            <ExpenseList
-              groupId={activeGroupId}
-              currency={activeGroup.currency}
-              members={activeMembers}
-              onAddExpense={() => setShowExpenseForm(true)}
-            />
-          </div>
-          <div>
-            <SettlementsView />
-          </div>
-        </div>
-      )}
-
-      {/* Add Expense modal */}
-      {showExpenseForm && activeGroupId && (
-        <ExpenseForm
-          groupId={activeGroupId}
-          members={activeMembers}
-          onClose={() => setShowExpenseForm(false)}
+        {/* Bottom Navigation Bar with Signature Receipt-Tear Divider & Center Plus */}
+        <BottomNav
+          activeTab={activeTab}
+          onTabChange={(tab) => {
+            setActiveTab(tab);
+            if (tab !== 'dashboard') {
+              // Soft stub indication for other tabs
+              console.log(`Switched to tab: ${tab}`);
+            }
+          }}
+          onAddClick={() => setIsAddSheetOpen(true)}
         />
-      )}
 
-      {/* Create Group modal */}
-      {showGroupForm && (
-        <GroupForm onClose={() => setShowGroupForm(false)} />
-      )}
-
-      {/* Members panel modal */}
-      {showMembersPanel && activeGroupId && (
-        <MembersPanel onClose={() => setShowMembersPanel(false)} />
-      )}
+        {/* Bottom Sheet Modal for Adding Expense / Pooled MoMo Payment */}
+        <AddActionSheet
+          isOpen={isAddSheetOpen}
+          onClose={() => setIsAddSheetOpen(false)}
+          activeGroupName={activeGroup.name}
+        />
+      </div>
     </div>
   );
 }

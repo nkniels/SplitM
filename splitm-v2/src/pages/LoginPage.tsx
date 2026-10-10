@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, Phone, KeyRound } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
@@ -178,7 +178,13 @@ export default function LoginPage() {
     <div className="min-h-screen bg-background flex items-center justify-center px-4 py-8">
       <div className="w-full max-w-md">
         {/* Header */}
-        <div className="text-center mb-8">
+        <div className="text-center mb-6">
+          <Link
+            to="/preview"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-accent/15 text-accent text-xs font-semibold hover:bg-accent/25 transition-colors mb-3 border border-accent/20"
+          >
+            Explore Dashboard (Design Review) &rarr;
+          </Link>
           <h1 className="text-3xl font-bold text-primary tracking-tight">SplitM</h1>
           <p className="text-slate-400 mt-2 text-sm">Split expenses, not friendships.</p>
         </div>

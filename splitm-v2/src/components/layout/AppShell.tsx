@@ -45,8 +45,8 @@ export default function AppShell({ children }: AppShellProps) {
       {/* Sync status banner — sits above the navbar */}
       <SyncStatusBar />
 
-      {/* Sticky top navbar */}
-      <header className="bg-surface border-b border-border sticky top-0 z-40 transition-colors duration-200">
+      {/* Sticky top navbar (Desktop only - mobile uses the single PWA receipt screen layout) */}
+      <header className="hidden md:block bg-surface border-b border-border sticky top-0 z-40 transition-colors duration-200">
         <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
           {/* Left: app name + icon */}
           <div className="flex items-center gap-2">

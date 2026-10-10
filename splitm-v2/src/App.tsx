@@ -25,7 +25,13 @@ export default function App() {
   const dispatch = useDispatch();
 
   useEffect(() => {
+    // 5-second fallback: never leave UI permanently stuck in loading if auth state hangs
+    const authTimeout = setTimeout(() => {
+      dispatch(setAuthLoading(false));
+    }, 5000);
+
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      clearTimeout(authTimeout);
       if (firebaseUser) {
         dispatch(setUser({
           uid: firebaseUser.uid,
@@ -39,8 +45,12 @@ export default function App() {
       dispatch(setAuthLoading(false));
     });
 
-    return () => unsubscribe();
+    return () => {
+      clearTimeout(authTimeout);
+      unsubscribe();
+    };
   }, [dispatch]);
+
 
   return (
     <div className="font-sans">

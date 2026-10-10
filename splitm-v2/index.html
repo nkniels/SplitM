@@ -3,15 +3,81 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="manifest" href="/manifest.json" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#090d16" id="theme-color-meta" />
     <title>SplitM — Smart Group Expense & Settlement Dashboard</title>
     <meta name="description" content="Split group expenses fairly with exact integer-cent precision, zero-sum debt simplification, and 1-tap settlements." />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <script>
+      (function() {
+        try {
+          var saved = localStorage.getItem('splitm_theme');
+          var theme = saved || 'dark';
+          if (theme === 'dark') {
+            document.documentElement.classList.add('dark');
+          } else {
+            document.documentElement.classList.remove('dark');
+          }
+          var meta = document.getElementById('theme-color-meta');
+          if (meta) meta.content = (theme === 'dark') ? '#090d16' : '#f8fafc';
+        } catch (e) {
+          document.documentElement.classList.add('dark');
+        }
+      })();
+    </script>
+    <style>
+      @keyframes splitmSpin {
+        to { transform: rotate(360deg); }
+      }
+      .splitm-fallback-btn {
+        transition: all 0.2s ease;
+      }
+      .splitm-fallback-btn:hover {
+        transform: translateY(-1px);
+        opacity: 0.92;
+      }
+    </style>
   </head>
   <body class="bg-background text-slate-100 antialiased selection:bg-primary/20 selection:text-primary">
-    <div id="root"></div>
+    <div id="root">
+      <div id="splitm-initial-splash" style="min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px; font-family:system-ui, -apple-system, sans-serif;">
+        <div style="width:38px; height:38px; border:3px solid rgba(99,102,241,0.25); border-top-color:#6366f1; border-radius:50%; animation:splitmSpin 0.8s linear infinite;"></div>
+        <p style="font-size:0.875rem; color:#94a3b8; margin:0; letter-spacing:-0.01em;">Loading SplitM...</p>
+      </div>
+    </div>
+
+    <!-- 5-Second Visible Fallback Guard -->
+    <script>
+      window.__splitm_mounted = false;
+      setTimeout(function() {
+        if (!window.__splitm_mounted) {
+          var root = document.getElementById('root');
+          var splash = document.getElementById('splitm-initial-splash');
+          if (splash || (root && (!root.firstElementChild || root.innerText.trim() === 'Loading SplitM...'))) {
+            var isDark = document.documentElement.classList.contains('dark');
+            var bgCard = isDark ? '#111827' : '#ffffff';
+            var borderCard = isDark ? '#1f293d' : '#e2e8f0';
+            var textColor = isDark ? '#f8fafc' : '#0f172a';
+            var subColor = isDark ? '#94a3b8' : '#64748b';
+            root.innerHTML = '' +
+              '<div style="min-height:100vh; display:flex; align-items:center; justify-content:center; padding:1.5rem; font-family:system-ui,-apple-system,sans-serif; text-align:center;">' +
+                '<div style="max-width:440px; width:100%; background:' + bgCard + '; border:1px solid ' + borderCard + '; border-radius:16px; padding:2rem; box-shadow:0 20px 25px -5px rgba(0,0,0,0.3);">' +
+                  '<div style="width:48px; height:48px; margin:0 auto 1rem; border-radius:12px; background:rgba(99,102,241,0.15); display:flex; align-items:center; justify-content:center; font-size:1.5rem;">⚡</div>' +
+                  '<h2 style="font-size:1.25rem; font-weight:700; margin:0 0 0.5rem; color:' + textColor + ';">Taking longer than usual to load</h2>' +
+                  '<p style="font-size:0.875rem; color:' + subColor + '; margin:0 0 1.5rem; line-height:1.5;">SplitM may have encountered a network timeout, missing credentials, or cached data.</p>' +
+                  '<div style="display:flex; flex-direction:column; gap:0.6rem;">' +
+                    '<button class="splitm-fallback-btn" onclick="window.location.reload(true)" style="background:#6366f1; color:#ffffff; border:none; padding:0.75rem 1.25rem; border-radius:10px; font-weight:600; cursor:pointer; font-size:0.875rem;">Reload App</button>' +
+                    '<button class="splitm-fallback-btn" onclick="if(window.navigator&&navigator.serviceWorker){navigator.serviceWorker.getRegistrations().then(function(r){r.forEach(function(s){s.unregister()})});caches.keys().then(function(k){k.forEach(function(c){caches.delete(c)})})};try{localStorage.clear()}catch(e){};window.location.reload(true)" style="background:transparent; color:' + subColor + '; border:1px solid ' + borderCard + '; padding:0.7rem 1.25rem; border-radius:10px; font-weight:500; cursor:pointer; font-size:0.875rem;">Clear Cache & Reload</button>' +
+                  '</div>' +
+                '</div>' +
+              '</div>';
+          }
+        }
+      }, 5000);
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

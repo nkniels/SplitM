@@ -1,0 +1,5 @@
+[main de47b82] feat: add ExpenseForm modal task7
+ 2 files changed, 381 insertions(+)
+ create mode 100644 splitm-v2/.agents/tasks/task7-done.txt
+ create mode 100644 splitm-v2/src/components/expenses/ExpenseForm.tsx
+CODE:0

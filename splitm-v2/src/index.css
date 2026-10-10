@@ -1,16 +1,81 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 
 @theme {
-  --color-background: #0f1117;
-  --color-surface: #1a1d27;
+  --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  /* Fintech Dark Mode Tokens */
+  --color-background: #090d16;
+  --color-surface: #0f172a;
+  --color-surface-hover: #172033;
+  --color-surface-card: #0d1322;
+  
   --color-primary: #6366f1;
-  --color-secondary: #334155;
-  --color-danger: #ef4444;
-  --color-success: #22c55e;
+  --color-primary-hover: #4f46e5;
+  --color-secondary: #1e293b;
+  
+  --color-danger: #f43f5e;
+  --color-danger-subtle: rgba(244, 63, 94, 0.12);
+  
+  --color-success: #10b981;
+  --color-success-subtle: rgba(16, 185, 129, 0.12);
+  
+  --color-accent: #06b6d4;
+  --color-border: #1e293b;
+  --color-border-glow: rgba(99, 102, 241, 0.2);
 }
 
 @layer base {
   body {
-    @apply bg-background text-slate-100 antialiased;
+    @apply bg-background text-slate-100 antialiased font-sans selection:bg-primary/30 selection:text-white;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
   }
+
+  /* Smooth scrolling and focus outline reset */
+  * {
+    border-color: #1e293b;
+  }
+}
+
+/* Fintech Micro-Animation & Glow Utilities */
+.glass-panel {
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.glass-card {
+  background: linear-gradient(135deg, rgba(26, 33, 53, 0.6) 0%, rgba(15, 23, 42, 0.8) 100%);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.glow-success {
+  box-shadow: 0 0 20px -3px rgba(16, 185, 129, 0.25);
+}
+
+.glow-danger {
+  box-shadow: 0 0 20px -3px rgba(244, 63, 94, 0.25);
+}
+
+.glow-primary {
+  box-shadow: 0 0 25px -4px rgba(99, 102, 241, 0.35);
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #475569;
 }

@@ -1,73 +1,71 @@
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
+
     // Helper functions
     function isAuthenticated() {
       return request.auth != null;
     }
-    
-    function isOwner(userId) {
-      return request.auth.uid == userId;
-    }
-    
-    function isGroupMember(groupId) {
-      return exists(path('/databases/' + database + '/documents/members/' + groupId + '_' + request.auth.uid));
-    }
-    
+
     function isGroupOwner(groupId) {
-      return get(path('/databases/' + database + '/documents/groups/' + groupId)).data.createdBy == request.auth.uid;
+      return isAuthenticated() && 
+        exists(/databases/$(database)/documents/groups/$(groupId)) &&
+        get(/databases/$(database)/documents/groups/$(groupId)).data.createdBy == request.auth.uid;
     }
-    
+
     // Users collection
     match /users/{userId} {
-      allow read, write: if isAuthenticated() && isOwner(userId);
+      allow read, write: if isAuthenticated() && request.auth.uid == userId;
       allow create: if isAuthenticated();
     }
-    
+
     // Groups collection
     match /groups/{groupId} {
-      allow read: if isAuthenticated() && (isGroupOwner(groupId) || isGroupMember(groupId));
-      allow write: if isAuthenticated() && isGroupOwner(groupId);
-      allow create: if isAuthenticated();
-      
-      // Members subcollection
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && request.resource.data.createdBy == request.auth.uid;
+      allow update, delete: if isAuthenticated() && resource.data.createdBy == request.auth.uid;
+
+      // Subcollections (if used)
       match /members/{memberId} {
-        allow read: if isAuthenticated() && (isGroupOwner(groupId) || isGroupMember(groupId));
-        allow write: if isAuthenticated() && isGroupOwner(groupId);
-        allow create: if isAuthenticated() && (isGroupOwner(groupId) || isGroupMember(groupId));
+        allow read, write: if isAuthenticated();
       }
-      
-      // Expenses subcollection
+
       match /expenses/{expenseId} {
-        allow read: if isAuthenticated() && (isGroupOwner(groupId) || isGroupMember(groupId));
-        allow write: if isAuthenticated() && (isGroupOwner(groupId) || isGroupMember(groupId));
-        allow create: if isAuthenticated() && (isGroupOwner(groupId) || isGroupMember(groupId));
-        
-        // Validate expense data
-        allow write: if request.resource.data.amount > 0
-          && request.resource.data.amount < 1000000
-          && request.resource.data.splits.size() > 0
-          && request.resource.data.payers.size() > 0;
+        allow read, write: if isAuthenticated() &&
+          request.resource.data.amount > 0 &&
+          request.resource.data.amount < 1000000;
       }
-      
-      // Settlements subcollection
+
       match /settlements/{settlementId} {
-        allow read: if isAuthenticated() && (isGroupOwner(groupId) || isGroupMember(groupId));
-        allow write: if isAuthenticated() && (isGroupOwner(groupId) || isGroupMember(groupId));
-        allow create: if isAuthenticated() && (isGroupOwner(groupId) || isGroupMember(groupId));
+        allow read, write: if isAuthenticated();
       }
     }
-    
-    // Notifications
+
+    // Root collections (as stored by SplitM sync services)
+    match /members/{memberId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    match /expenses/{expenseId} {
+      allow read, write: if isAuthenticated() &&
+        request.resource.data.amount > 0 &&
+        request.resource.data.amount < 1000000;
+    }
+
+    match /settlements/{settlementId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // Notifications & Backups
     match /notifications/{notificationId} {
       allow read, write: if isAuthenticated() && 
-        request.resource.data.userId == request.auth.uid;
+        (resource == null || resource.data.userId == request.auth.uid);
     }
-    
-    // Backups
+
     match /backups/{backupId} {
       allow read, write: if isAuthenticated() && 
-        request.resource.data.userId == request.auth.uid;
+        (resource == null || resource.data.userId == request.auth.uid);
     }
   }
 }

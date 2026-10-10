@@ -3,47 +3,54 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // ── Helpers ─────────────────────────────────────────────────────────────
-    function isSignedIn() {
+    // Helper functions
+    function isAuthenticated() {
       return request.auth != null;
     }
 
-    function isOwner(resource) {
-      return request.auth.uid == resource.data.createdBy;
+    // Users collection
+    match /users/{userId} {
+      allow read, write: if isAuthenticated() && request.auth.uid == userId;
+      allow create: if isAuthenticated();
     }
 
-    // ── Groups ──────────────────────────────────────────────────────────────
-    // Only the creator can read/write their groups.
+    // Groups collection
     match /groups/{groupId} {
-      allow read, write: if isSignedIn() && isOwner(resource);
-      allow create: if isSignedIn() && request.auth.uid == request.resource.data.createdBy;
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && request.resource.data.createdBy == request.auth.uid;
+      allow update, delete: if isAuthenticated() && resource.data.createdBy == request.auth.uid;
+
+      match /members/{memberId} {
+        allow read, write: if isAuthenticated();
+      }
+
+      match /expenses/{expenseId} {
+        allow read, write: if isAuthenticated() &&
+          request.resource.data.amount > 0 &&
+          request.resource.data.amount < 1000000;
+      }
+
+      match /settlements/{settlementId} {
+        allow read, write: if isAuthenticated();
+      }
     }
 
-    // ── Members ─────────────────────────────────────────────────────────────
-    // Members belong to a group. Allow access if the caller owns the parent group.
+    // Root collections (accessed by Flat Sync Architecture)
     match /members/{memberId} {
-      allow read, write: if isSignedIn() &&
-        exists(/databases/$(database)/documents/groups/$(resource.data.groupId)) &&
-        get(/databases/$(database)/documents/groups/$(resource.data.groupId)).data.createdBy == request.auth.uid;
-
-      allow create: if isSignedIn() &&
-        exists(/databases/$(database)/documents/groups/$(request.resource.data.groupId)) &&
-        get(/databases/$(database)/documents/groups/$(request.resource.data.groupId)).data.createdBy == request.auth.uid;
+      allow read, write: if isAuthenticated();
     }
 
-    // ── Expenses ────────────────────────────────────────────────────────────
-    // Expenses belong to a group. Same ownership check as members.
     match /expenses/{expenseId} {
-      allow read, write: if isSignedIn() &&
-        exists(/databases/$(database)/documents/groups/$(resource.data.groupId)) &&
-        get(/databases/$(database)/documents/groups/$(resource.data.groupId)).data.createdBy == request.auth.uid;
-
-      allow create: if isSignedIn() &&
-        exists(/databases/$(database)/documents/groups/$(request.resource.data.groupId)) &&
-        get(/databases/$(database)/documents/groups/$(request.resource.data.groupId)).data.createdBy == request.auth.uid;
+      allow read, write: if isAuthenticated() &&
+        request.resource.data.amount > 0 &&
+        request.resource.data.amount < 1000000;
     }
 
-    // ── Default deny ────────────────────────────────────────────────────────
+    match /settlements/{settlementId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // Default deny for unlisted documents
     match /{document=**} {
       allow read, write: if false;
     }

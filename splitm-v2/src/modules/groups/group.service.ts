@@ -6,6 +6,7 @@ import {
   getDocs,
   query,
   where,
+  onSnapshot
 } from 'firebase/firestore';
 import type { Group, Member } from '../../core/types';
 
@@ -82,3 +83,62 @@ export const loadMembersForGroup = async (groupId: string): Promise<Member[]> =>
   const all = await getStore('members') as Member[];
   return all.filter(m => m.groupId === groupId);
 };
+
+// ─── Real-Time Firestore Subscriptions ────────────────────────────────────────
+
+/**
+ * Subscribe to real-time group updates for a user.
+ */
+export const subscribeToUserGroups = (
+  userId: string,
+  onUpdate: (groups: Group[]) => void,
+  onError?: (error: Error) => void
+) => {
+  const q = query(
+    collection(db, 'groups'),
+    where('createdBy', '==', userId)
+  );
+  return onSnapshot(
+    q,
+    (snapshot) => {
+      const groups: Group[] = snapshot.docs.map((d) => d.data() as Group);
+      for (const g of groups) {
+        void putToStore('groups', g);
+      }
+      onUpdate(groups);
+    },
+    (error) => {
+      console.warn('[SplitM] Real-time groups listener error:', error);
+      onError?.(error);
+    }
+  );
+};
+
+/**
+ * Subscribe to real-time member updates for a group.
+ */
+export const subscribeToGroupMembers = (
+  groupId: string,
+  onUpdate: (members: Member[]) => void,
+  onError?: (error: Error) => void
+) => {
+  const q = query(
+    collection(db, 'members'),
+    where('groupId', '==', groupId)
+  );
+  return onSnapshot(
+    q,
+    (snapshot) => {
+      const members: Member[] = snapshot.docs.map((d) => d.data() as Member);
+      for (const m of members) {
+        void putToStore('members', m);
+      }
+      onUpdate(members);
+    },
+    (error) => {
+      console.warn('[SplitM] Real-time members listener error:', error);
+      onError?.(error);
+    }
+  );
+};
+

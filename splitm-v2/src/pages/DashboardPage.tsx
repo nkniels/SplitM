@@ -4,6 +4,10 @@ import { PlusCircle, Users } from 'lucide-react';
 import type { RootState, AppDispatch } from '../core/store/store';
 import { loadGroups, loadMembersThunk } from '../modules/groups/group.thunks';
 import { loadExpenses } from '../modules/expenses/expense.thunks';
+import { setGroups, setMembers } from '../modules/groups/group.slice';
+import { setExpenses } from '../modules/expenses/expense.slice';
+import { subscribeToUserGroups, subscribeToGroupMembers } from '../modules/groups/group.service';
+import { subscribeToGroupExpenses } from '../modules/expenses/expense.service';
 import { ExpenseList } from '../components/expenses/ExpenseList';
 import { ExpenseForm } from '../components/expenses/ExpenseForm';
 import GroupForm from '../components/groups/GroupForm';
@@ -15,6 +19,7 @@ import { cn } from '../core/utils/helpers';
 export default function DashboardPage() {
   const dispatch = useDispatch<AppDispatch>();
 
+  const currentUser = useSelector((state: RootState) => state.auth.user);
   const groups = useSelector((state: RootState) => state.groups.groups);
   const activeGroupId = useSelector((state: RootState) => state.groups.activeGroupId);
   const members = useSelector((state: RootState) => state.groups.members);
@@ -23,21 +28,41 @@ export default function DashboardPage() {
   const [showGroupForm, setShowGroupForm] = useState(false);
   const [showMembersPanel, setShowMembersPanel] = useState(false);
 
-  // Load groups on mount
+  // Load groups on mount and subscribe to real-time updates from Firestore
   useEffect(() => {
     void dispatch(loadGroups());
-  }, [dispatch]);
+    if (currentUser?.uid) {
+      const unsub = subscribeToUserGroups(currentUser.uid, (freshGroups) => {
+        dispatch(setGroups(freshGroups));
+      });
+      return () => unsub();
+    }
+  }, [dispatch, currentUser?.uid]);
 
-  // When active group changes, load its expenses and members
+  // When active group changes, load its expenses and members with real-time listeners
   useEffect(() => {
     if (activeGroupId) {
       void dispatch(loadExpenses(activeGroupId));
       void dispatch(loadMembersThunk(activeGroupId));
+
+      const unsubExpenses = subscribeToGroupExpenses(activeGroupId, (freshExpenses) => {
+        dispatch(setExpenses(freshExpenses));
+      });
+
+      const unsubMembers = subscribeToGroupMembers(activeGroupId, (freshMembers) => {
+        dispatch(setMembers(freshMembers));
+      });
+
+      return () => {
+        unsubExpenses();
+        unsubMembers();
+      };
     }
   }, [dispatch, activeGroupId]);
 
   const activeGroup = activeGroupId ? groups[activeGroupId] : undefined;
   const activeMembers = activeGroupId
+
     ? Object.values(members).filter((m) => m.groupId === activeGroupId)
     : [];
 

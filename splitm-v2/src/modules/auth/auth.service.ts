@@ -55,16 +55,22 @@ export const loginWithGoogle = async () => {
 // Phone Auth
 // Initialize RecaptchaVerifier on a DOM element (e.g., 'recaptcha-container')
 export const setupRecaptcha = (containerId: string) => {
-  if (!window.recaptchaVerifier) {
-    window.recaptchaVerifier = new RecaptchaVerifier(auth, containerId, {
-      size: 'invisible',
-      callback: (_response: any) => {
-        // reCAPTCHA solved, allow signInWithPhoneNumber.
-      }
-    });
+  if (typeof window === 'undefined') return null as any;
+  if (window.recaptchaVerifier) {
+    try {
+      window.recaptchaVerifier.clear();
+    } catch (_) {}
+    window.recaptchaVerifier = null;
   }
+  window.recaptchaVerifier = new RecaptchaVerifier(auth, containerId, {
+    size: 'invisible',
+    callback: () => {
+      // reCAPTCHA solved
+    }
+  });
   return window.recaptchaVerifier;
 };
+
 
 export const sendPhoneOtp = async (phoneNumber: string, appVerifier: RecaptchaVerifier): Promise<ConfirmationResult> => {
   store.dispatch(setAuthLoading(true));

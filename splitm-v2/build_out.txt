@@ -1,9 +1,0 @@
-
-> splitm-v2@0.0.0 build
-> tsc -b && vite build ; type build_out.txt; type build_err.txt
-
-src/components/expenses/ExpenseCard.tsx(1,1): error TS6133: 'React' is declared but its value is never read.
-src/components/expenses/ExpenseDetail.tsx(1,1): error TS6133: 'React' is declared but its value is never read.
-src/components/expenses/ExpenseList.tsx(1,8): error TS6133: 'React' is declared but its value is never read.
-src/components/settlements/SettlementsView.tsx(1,8): error TS6133: 'React' is declared but its value is never read.
-src/pages/DashboardPage.tsx(1,8): error TS6133: 'React' is declared but its value is never read.

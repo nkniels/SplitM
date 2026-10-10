@@ -1,13 +1,21 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, Phone, KeyRound } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { useToast } from '../components/ui/Toast';
-import { loginWithEmail, registerWithEmail, loginWithGoogle } from '../modules/auth/auth.service';
+import { 
+  loginWithEmail, 
+  registerWithEmail, 
+  loginWithGoogle, 
+  setupRecaptcha, 
+  sendPhoneOtp, 
+  verifyPhoneOtp 
+} from '../modules/auth/auth.service';
 import { cn } from '../core/utils/helpers';
+import type { ConfirmationResult } from 'firebase/auth';
 
-type Tab = 'signin' | 'register';
+type Tab = 'signin' | 'register' | 'phone';
 
 // Simple Google SVG icon
 const GoogleIcon = () => (
@@ -79,6 +87,12 @@ export default function LoginPage() {
   const [regConfirm, setRegConfirm] = useState('');
   const [confirmError, setConfirmError] = useState('');
 
+  // Phone Auth fields
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [otpCode, setOtpCode] = useState('');
+  const [otpSent, setOtpSent] = useState(false);
+  const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
+
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -122,8 +136,46 @@ export default function LoginPage() {
     }
   };
 
+  const handleSendPhoneOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!phoneNumber.trim()) {
+      toast('Please enter a valid phone number with country code.', 'error');
+      return;
+    }
+    setIsLoading(true);
+    try {
+      const verifier = setupRecaptcha('recaptcha-container');
+      const result = await sendPhoneOtp(phoneNumber.trim(), verifier);
+      setConfirmationResult(result);
+      setOtpSent(true);
+      toast('SMS verification code sent! Check your phone.', 'success');
+    } catch (err: any) {
+      toast(err.message ?? 'Failed to send verification SMS.', 'error');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleVerifyPhoneOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!confirmationResult || !otpCode.trim()) {
+      toast('Please enter the 6-digit verification code.', 'error');
+      return;
+    }
+    setIsLoading(true);
+    try {
+      await verifyPhoneOtp(confirmationResult, otpCode.trim());
+      toast('Phone verified successfully!', 'success');
+      navigate('/');
+    } catch (err: any) {
+      toast(err.message ?? 'Invalid verification code. Please try again.', 'error');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center px-4">
+    <div className="min-h-screen bg-background flex items-center justify-center px-4 py-8">
       <div className="w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-8">
@@ -132,18 +184,18 @@ export default function LoginPage() {
         </div>
 
         {/* Card */}
-        <div className="bg-slate-900 border border-slate-800 rounded-xl shadow-2xl overflow-hidden">
+        <div className="bg-surface border border-border rounded-xl shadow-2xl overflow-hidden">
           {/* Tabs */}
-          <div className="flex border-b border-slate-800" role="tablist">
+          <div className="flex border-b border-border" role="tablist">
             <button
               type="button"
               role="tab"
               aria-selected={activeTab === 'signin'}
               onClick={() => setActiveTab('signin')}
               className={cn(
-                'flex-1 py-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-inset focus-visible:ring-2 focus-visible:ring-primary',
+                'flex-1 py-3 text-xs sm:text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-inset focus-visible:ring-2 focus-visible:ring-primary',
                 activeTab === 'signin'
-                  ? 'text-primary border-b-2 border-primary'
+                  ? 'text-primary border-b-2 border-primary bg-primary/5'
                   : 'text-slate-400 hover:text-slate-200'
               )}
             >
@@ -155,18 +207,32 @@ export default function LoginPage() {
               aria-selected={activeTab === 'register'}
               onClick={() => setActiveTab('register')}
               className={cn(
-                'flex-1 py-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-inset focus-visible:ring-2 focus-visible:ring-primary',
+                'flex-1 py-3 text-xs sm:text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-inset focus-visible:ring-2 focus-visible:ring-primary',
                 activeTab === 'register'
-                  ? 'text-primary border-b-2 border-primary'
+                  ? 'text-primary border-b-2 border-primary bg-primary/5'
                   : 'text-slate-400 hover:text-slate-200'
               )}
             >
-              Create Account
+              Register
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeTab === 'phone'}
+              onClick={() => setActiveTab('phone')}
+              className={cn(
+                'flex-1 py-3 text-xs sm:text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-inset focus-visible:ring-2 focus-visible:ring-primary',
+                activeTab === 'phone'
+                  ? 'text-primary border-b-2 border-primary bg-primary/5'
+                  : 'text-slate-400 hover:text-slate-200'
+              )}
+            >
+              Phone SMS
             </button>
           </div>
 
           <div className="p-6">
-            {/* Sign In Tab */}
+            {/* Sign In Tab (Email/Password) */}
             {activeTab === 'signin' && (
               <form onSubmit={handleSignIn} noValidate>
                 <div className="space-y-4">
@@ -193,34 +259,13 @@ export default function LoginPage() {
                     className="w-full mt-2"
                     isLoading={isLoading}
                   >
-                    Sign In
+                    Sign In with Email
                   </Button>
                 </div>
-
-                <div className="relative my-5">
-                  <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-slate-700" />
-                  </div>
-                  <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-slate-900 px-2 text-slate-500">or continue with</span>
-                  </div>
-                </div>
-
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="lg"
-                  className="w-full"
-                  leftIcon={<GoogleIcon />}
-                  onClick={handleGoogleSignIn}
-                  disabled={isLoading}
-                >
-                  Sign in with Google
-                </Button>
               </form>
             )}
 
-            {/* Register Tab */}
+            {/* Register Tab (Email/Password) */}
             {activeTab === 'register' && (
               <form onSubmit={handleRegister} noValidate>
                 <div className="space-y-4">
@@ -262,6 +307,93 @@ export default function LoginPage() {
                 </div>
               </form>
             )}
+
+            {/* Phone Authentication Tab */}
+            {activeTab === 'phone' && (
+              <div>
+                {!otpSent ? (
+                  <form onSubmit={handleSendPhoneOtp} noValidate className="space-y-4">
+                    <div>
+                      <Input
+                        label="Phone Number"
+                        type="tel"
+                        placeholder="+1234567890 or +237690000000"
+                        autoComplete="tel"
+                        value={phoneNumber}
+                        onChange={(e) => setPhoneNumber(e.target.value)}
+                        leftIcon={<Phone className="h-4 w-4" />}
+                        required
+                      />
+                      <p className="text-xs text-slate-400 mt-1.5">Include country code (e.g. +1, +237)</p>
+                    </div>
+                    <div id="recaptcha-container" />
+                    <Button
+                      type="submit"
+                      variant="primary"
+                      size="lg"
+                      className="w-full mt-2"
+                      isLoading={isLoading}
+                    >
+                      Send Verification Code
+                    </Button>
+                  </form>
+                ) : (
+                  <form onSubmit={handleVerifyPhoneOtp} noValidate className="space-y-4">
+                    <div className="text-xs text-slate-400 bg-surface-hover p-3 rounded-lg border border-border">
+                      Enter the 6-digit code sent to <strong className="text-slate-200">{phoneNumber}</strong>
+                    </div>
+                    <Input
+                      label="Verification Code (OTP)"
+                      type="text"
+                      placeholder="123456"
+                      value={otpCode}
+                      onChange={(e) => setOtpCode(e.target.value)}
+                      leftIcon={<KeyRound className="h-4 w-4" />}
+                      autoComplete="one-time-code"
+                      required
+                    />
+                    <Button
+                      type="submit"
+                      variant="primary"
+                      size="lg"
+                      className="w-full"
+                      isLoading={isLoading}
+                    >
+                      Verify & Sign In
+                    </Button>
+                    <button
+                      type="button"
+                      onClick={() => setOtpSent(false)}
+                      className="text-xs text-primary hover:underline block mx-auto pt-2"
+                    >
+                      &larr; Change phone number
+                    </button>
+                  </form>
+                )}
+              </div>
+            )}
+
+            {/* Universal Google Sign-In divider */}
+            <div className="relative my-6">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-border" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-surface px-2 text-slate-500">or continue with</span>
+              </div>
+            </div>
+
+            <Button
+              type="button"
+              variant="outline"
+              size="lg"
+              className="w-full"
+              leftIcon={<GoogleIcon />}
+              onClick={handleGoogleSignIn}
+              disabled={isLoading}
+            >
+              Sign in with Google
+            </Button>
           </div>
         </div>
       </div>

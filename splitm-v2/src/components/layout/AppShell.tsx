@@ -1,5 +1,6 @@
+import { useState } from 'react';
 import { useSelector } from 'react-redux';
-import { Layers, LogOut } from 'lucide-react';
+import { Layers, LogOut, Moon, Sun } from 'lucide-react';
 import type { RootState } from '../../core/store/store';
 import { logout } from '../../modules/auth/auth.service';
 import SyncStatusBar from './SyncStatusBar';
@@ -12,6 +13,25 @@ interface AppShellProps {
 
 export default function AppShell({ children }: AppShellProps) {
   const user = useSelector((state: RootState) => state.auth.user);
+  const [isDark, setIsDark] = useState(() => {
+    return typeof document !== 'undefined' && document.documentElement.classList.contains('dark');
+  });
+
+  const toggleTheme = () => {
+    const nextDark = !isDark;
+    setIsDark(nextDark);
+    if (nextDark) {
+      document.documentElement.classList.add('dark');
+      try { localStorage.setItem('splitm_theme', 'dark'); } catch (_) {}
+      const meta = document.getElementById('theme-color-meta');
+      if (meta) meta.setAttribute('content', '#090d16');
+    } else {
+      document.documentElement.classList.remove('dark');
+      try { localStorage.setItem('splitm_theme', 'light'); } catch (_) {}
+      const meta = document.getElementById('theme-color-meta');
+      if (meta) meta.setAttribute('content', '#f8fafc');
+    }
+  };
 
   const displayName = user?.displayName || user?.email || 'User';
   const firstLetter = displayName.charAt(0).toUpperCase();
@@ -21,12 +41,12 @@ export default function AppShell({ children }: AppShellProps) {
   };
 
   return (
-    <div className="min-h-screen bg-background text-slate-100">
+    <div className="min-h-screen bg-background text-slate-100 transition-colors duration-200">
       {/* Sync status banner — sits above the navbar */}
       <SyncStatusBar />
 
       {/* Sticky top navbar */}
-      <header className="bg-surface border-b border-slate-700 sticky top-0 z-40">
+      <header className="bg-surface border-b border-border sticky top-0 z-40 transition-colors duration-200">
         <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
           {/* Left: app name + icon */}
           <div className="flex items-center gap-2">
@@ -37,8 +57,23 @@ export default function AppShell({ children }: AppShellProps) {
           {/* Center: GroupSelector */}
           <GroupSelector />
 
-          {/* Right: user info + logout */}
-          <div className="flex items-center gap-3">
+          {/* Right: theme toggle + user info + logout */}
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* Theme Toggle Button */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleTheme}
+              aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+              title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+            >
+              {isDark ? (
+                <Sun className="h-4 w-4 text-amber-400 hover:text-amber-300" />
+              ) : (
+                <Moon className="h-4 w-4 text-slate-600 hover:text-slate-800" />
+              )}
+            </Button>
+
             {/* Avatar */}
             {user?.photoURL ? (
               <img
@@ -74,6 +109,7 @@ export default function AppShell({ children }: AppShellProps) {
           </div>
         </div>
       </header>
+
 
       {/* Page content */}
       <main className="max-w-7xl mx-auto px-4 py-6">{children}</main>

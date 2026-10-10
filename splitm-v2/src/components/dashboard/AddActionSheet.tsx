@@ -5,12 +5,16 @@ interface AddActionSheetProps {
   isOpen: boolean;
   onClose: () => void;
   activeGroupName: string;
+  onAddExpense?: () => void;
+  onStartPooled?: () => void;
 }
 
 export const AddActionSheet: React.FC<AddActionSheetProps> = ({
   isOpen,
   onClose,
   activeGroupName,
+  onAddExpense,
+  onStartPooled,
 }) => {
   if (!isOpen) return null;
 
@@ -53,8 +57,12 @@ export const AddActionSheet: React.FC<AddActionSheetProps> = ({
           {/* Action 1: Add Shared Expense */}
           <button
             onClick={() => {
-              alert(`Add Expense flow opened for "${activeGroupName}".`);
               onClose();
+              if (onAddExpense) {
+                onAddExpense();
+              } else {
+                alert(`Add Expense flow opened for "${activeGroupName}".`);
+              }
             }}
             className="w-full text-left p-4 rounded-2xl bg-background border border-border hover:border-primary/40 hover:bg-surface-hover transition-all duration-150 flex items-center justify-between group"
           >
@@ -81,8 +89,12 @@ export const AddActionSheet: React.FC<AddActionSheetProps> = ({
           {/* Action 2: Start Pooled MoMo Payment */}
           <button
             onClick={() => {
-              alert(`Pooled MoMo Payment flow opened for "${activeGroupName}".`);
               onClose();
+              if (onStartPooled) {
+                onStartPooled();
+              } else {
+                alert(`Pooled MoMo Payment flow opened for "${activeGroupName}".`);
+              }
             }}
             className="w-full text-left p-4 rounded-2xl bg-accent-subtle border border-accent/25 hover:border-accent hover:bg-accent-subtle/80 transition-all duration-150 flex items-center justify-between group"
           >

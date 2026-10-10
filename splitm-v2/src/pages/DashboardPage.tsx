@@ -1,8 +1,20 @@
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { Sun, Moon } from '@phosphor-icons/react';
+import type { RootState, AppDispatch } from '../core/store/store';
+import { loadGroups, loadMembersThunk } from '../modules/groups/group.thunks';
+import { loadExpenses } from '../modules/expenses/expense.thunks';
+import { setGroups, setMembers } from '../modules/groups/group.slice';
+import { setExpenses } from '../modules/expenses/expense.slice';
+import { subscribeToUserGroups, subscribeToGroupMembers } from '../modules/groups/group.service';
+import { subscribeToGroupExpenses } from '../modules/expenses/expense.service';
+import { FinanceEngine } from '../core/finance/FinanceEngine';
+import type { Group } from '../core/types';
 import { GroupRingCard, type GroupCardData } from '../components/dashboard/GroupRingCard';
 import { BottomNav, type NavTabId } from '../components/dashboard/BottomNav';
 import { AddActionSheet } from '../components/dashboard/AddActionSheet';
+import { ExpenseForm } from '../components/expenses/ExpenseForm';
+import GroupForm from '../components/groups/GroupForm';
 
 // Initial Mock Groups & Members following SplitM's exact domain:
 // Group expenses (greedy debt settlement) & Pooled MoMo payments (MTN/Orange Money)
@@ -154,10 +166,127 @@ const INITIAL_GROUPS: GroupCardData[] = [
 ];
 
 export default function DashboardPage() {
-  const [groups] = useState<GroupCardData[]>(INITIAL_GROUPS);
+  const dispatch = useDispatch<AppDispatch>();
+
+  const currentUser = useSelector((state: RootState) => state.auth.user);
+  const firestoreGroups = useSelector((state: RootState) => state.groups.groups);
+  const firestoreMembers = useSelector((state: RootState) => state.groups.members);
+  const firestoreExpenses = useSelector((state: RootState) => state.expenses.expenses);
+
   const [activeGroupId, setActiveGroupId] = useState<string>(INITIAL_GROUPS[0].id);
   const [activeTab, setActiveTab] = useState<NavTabId>('dashboard');
   const [isAddSheetOpen, setIsAddSheetOpen] = useState(false);
+  const [showExpenseForm, setShowExpenseForm] = useState(false);
+  const [showGroupForm, setShowGroupForm] = useState(false);
+
+  // Load groups on mount and subscribe to real-time updates from Firestore
+  useEffect(() => {
+    if (currentUser?.uid) {
+      void dispatch(loadGroups());
+      const unsub = subscribeToUserGroups(currentUser.uid, (freshGroups) => {
+        dispatch(setGroups(freshGroups));
+      });
+      return () => unsub();
+    }
+  }, [dispatch, currentUser?.uid]);
+
+  // Synchronize Firestore groups into active state
+  useEffect(() => {
+    const groupKeys = Object.keys(firestoreGroups);
+    if (groupKeys.length > 0 && !groupKeys.includes(activeGroupId)) {
+      setActiveGroupId(groupKeys[0]);
+    }
+  }, [firestoreGroups, activeGroupId]);
+
+  // When active group changes, load its expenses and members with real-time listeners
+  useEffect(() => {
+    if (activeGroupId && firestoreGroups[activeGroupId]) {
+      void dispatch(loadExpenses(activeGroupId));
+      void dispatch(loadMembersThunk(activeGroupId));
+
+      const unsubExpenses = subscribeToGroupExpenses(activeGroupId, (freshExpenses) => {
+        dispatch(setExpenses(freshExpenses));
+      });
+
+      const unsubMembers = subscribeToGroupMembers(activeGroupId, (freshMembers) => {
+        dispatch(setMembers(freshMembers));
+      });
+
+      return () => {
+        unsubExpenses();
+        unsubMembers();
+      };
+    }
+  }, [dispatch, activeGroupId, firestoreGroups]);
+
+  // Derive cards from Firestore if user has groups; otherwise use mock domain data
+  const groups = useMemo<GroupCardData[]>(() => {
+    const groupList = Object.values(firestoreGroups);
+    if (!currentUser || groupList.length === 0) {
+      return INITIAL_GROUPS;
+    }
+
+    return groupList.map((grp) => {
+      const grpMembers = Object.values(firestoreMembers).filter((m) => m.groupId === grp.id);
+      const grpExpenses = Object.values(firestoreExpenses).filter((e) => e.groupId === grp.id && !e.settled);
+
+      const derivedGroup: Group = {
+        ...grp,
+        members: grpMembers,
+        expenses: grpExpenses,
+      };
+
+      const balances =
+        grpMembers.length > 0 && grpExpenses.length > 0
+          ? FinanceEngine.calculateBalances(derivedGroup)
+          : {};
+
+      const currentMember =
+        grpMembers.find((m) => m.name.toLowerCase().includes('you')) ||
+        grpMembers[0];
+      const userBalance = currentMember && balances[currentMember.id] ? balances[currentMember.id] : 0;
+
+      const userBalanceType = userBalance > 0 ? 'owed' : userBalance < 0 ? 'owes' : 'settled';
+      const summaryText =
+        userBalance > 0
+          ? `You are owed ${userBalance.toLocaleString('en-US')} XAF`
+          : userBalance < 0
+          ? `You owe ${Math.abs(userBalance).toLocaleString('en-US')} XAF`
+          : 'All balances settled';
+
+      const ringMembers = grpMembers.map((m) => {
+        const bal = balances[m.id] ?? 0;
+        const nameParts = m.name.split(' ');
+        const initials =
+          nameParts.length > 1
+            ? `${nameParts[0][0]}${nameParts[1][0]}`.toUpperCase()
+            : m.name.slice(0, 2).toUpperCase();
+
+        return {
+          id: m.id,
+          name: m.name,
+          initials,
+          balanceXaf: bal,
+          paymentProvider: 'mtn' as const,
+        };
+      });
+
+      const totalSpent = grpExpenses.reduce((sum, e) => sum + e.amount, 0);
+
+      return {
+        id: grp.id,
+        name: grp.name,
+        category: grp.description || 'Group Ledger',
+        summaryText,
+        userBalanceType,
+        userBalanceAmount: Math.abs(userBalance),
+        totalExpenses: totalSpent,
+        pooledCollected: grp.budget ? Math.min(totalSpent, grp.budget) : undefined,
+        pooledTarget: grp.budget || undefined,
+        members: ringMembers.length > 0 ? ringMembers : INITIAL_GROUPS[0].members,
+      };
+    });
+  }, [firestoreGroups, firestoreMembers, firestoreExpenses, currentUser]);
 
   // Light / Dark Theme toggle helper
   const [isDark, setIsDark] = useState(() => {
@@ -187,6 +316,8 @@ export default function DashboardPage() {
 
   const activeGroup = groups.find((g) => g.id === activeGroupId) || groups[0];
   const otherGroups = groups.filter((g) => g.id !== activeGroupId);
+
+  const activeRealMembers = Object.values(firestoreMembers).filter((m) => m.groupId === activeGroupId);
 
   return (
     <div className="min-h-screen bg-background text-primary selection:bg-accent/20 transition-colors duration-200">
@@ -287,7 +418,33 @@ export default function DashboardPage() {
           isOpen={isAddSheetOpen}
           onClose={() => setIsAddSheetOpen(false)}
           activeGroupName={activeGroup.name}
+          onAddExpense={() => {
+            if (activeRealMembers.length > 0) {
+              setShowExpenseForm(true);
+            } else {
+              setShowGroupForm(true);
+            }
+          }}
+          onStartPooled={() => {
+            alert(`Pooled MoMo Payment: Starting group pot for "${activeGroup.name}". Contributors can pay with MTN MoMo & Orange Money.`);
+          }}
         />
+
+        {/* Real Expense Creation Modal wired to Firestore */}
+        {showExpenseForm && activeGroupId && activeRealMembers.length > 0 && (
+          <ExpenseForm
+            groupId={activeGroupId}
+            members={activeRealMembers}
+            onClose={() => setShowExpenseForm(false)}
+          />
+        )}
+
+        {/* Real Group Creation Modal wired to Firestore */}
+        {showGroupForm && (
+          <GroupForm
+            onClose={() => setShowGroupForm(false)}
+          />
+        )}
       </div>
     </div>
   );

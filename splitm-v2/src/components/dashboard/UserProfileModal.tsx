@@ -16,12 +16,12 @@ interface UserProfileModalProps {
 }
 
 const AVATAR_PRESETS = [
-  'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=160&h=160&q=80',
-  'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=160&h=160&q=80',
-  'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=160&h=160&q=80',
-  'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&w=160&h=160&q=80',
-  'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=160&h=160&q=80',
-  'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=160&h=160&q=80',
+  '/avatars/adult_1.jpg',
+  '/avatars/adult_2.jpg',
+  '/avatars/teen_1.jpg',
+  '/avatars/teen_2.jpg',
+  '/avatars/elder_1.jpg',
+  '/avatars/elder_2.jpg',
 ];
 
 export const UserProfileModal: React.FC<UserProfileModalProps> = ({

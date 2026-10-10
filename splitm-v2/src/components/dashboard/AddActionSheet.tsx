@@ -105,7 +105,7 @@ export const AddActionSheet: React.FC<AddActionSheetProps> = ({
               <div>
                 <div className="flex items-center gap-1.5">
                   <h4 className="text-sm font-semibold text-primary">
-                    Pooled MoMo Pot
+                    Pool Money Pot
                   </h4>
                   <span className="text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded bg-accent/20 text-accent">
                     MoMo & OM

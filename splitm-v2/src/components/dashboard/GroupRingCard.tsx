@@ -27,33 +27,46 @@ interface GroupRingCardProps {
 }
 
 /**
- * Calculates clock positions for avatars ringed around the card border.
- * Maps up to 7 members to precise clock positions (12, 2, 4, 6, 8, 10 or 7-point ring).
+ * Calculates positions for avatars floating strictly INSIDE the card border lines.
+ * Places members along the inner perimeter with safe margins from the borders.
  */
-function getClockCoordinates(index: number, total: number) {
-  if (total <= 6) {
-    const clock6 = [
-      { left: '50%', top: '0%' },    // 12 o'clock (top center)
-      { left: '95%', top: '20%' },   // 2 o'clock (top right corner)
-      { left: '95%', top: '80%' },   // 4 o'clock (bottom right corner)
-      { left: '50%', top: '100%' },  // 6 o'clock (bottom center)
-      { left: '5%', top: '80%' },    // 8 o'clock (bottom left corner)
-      { left: '5%', top: '20%' },    // 10 o'clock (top left corner)
+function getInnerCardCoordinates(index: number, total: number, isActive: boolean) {
+  if (!isActive) {
+    // Inactive card: compact inner corner coordinates
+    const inactiveCoords = [
+      { left: '16%', top: '30%' },
+      { left: '84%', top: '30%' },
+      { left: '84%', top: '70%' },
+      { left: '16%', top: '70%' },
+      { left: '50%', top: '22%' },
+      { left: '50%', top: '78%' },
     ];
-    return clock6[index % clock6.length];
+    return inactiveCoords[index % inactiveCoords.length];
   }
 
-  // 7 members evenly distributed along perimeter
-  const clock7 = [
-    { left: '50%', top: '0%' },    // 12:00
-    { left: '90%', top: '16%' },   // 1:45
-    { left: '97%', top: '56%' },   // 3:30
-    { left: '78%', top: '98%' },   // 5:15
-    { left: '22%', top: '98%' },   // 6:45
-    { left: '3%', top: '56%' },    // 8:30
-    { left: '10%', top: '16%' },   // 10:15
+  if (total <= 6) {
+    const clock6Inside = [
+      { left: '14%', top: '24%' },  // 10 o'clock (upper-left)
+      { left: '50%', top: '16%' },  // 12 o'clock (top center)
+      { left: '86%', top: '24%' },  // 2 o'clock (upper-right)
+      { left: '86%', top: '78%' },  // 4 o'clock (lower-right)
+      { left: '50%', top: '86%' },  // 6 o'clock (bottom center)
+      { left: '14%', top: '78%' },  // 8 o'clock (lower-left)
+    ];
+    return clock6Inside[index % clock6Inside.length];
+  }
+
+  // 7 members evenly distributed along the safe inner perimeter
+  const clock7Inside = [
+    { left: '14%', top: '24%' },
+    { left: '50%', top: '15%' },
+    { left: '86%', top: '24%' },
+    { left: '88%', top: '56%' },
+    { left: '74%', top: '84%' },
+    { left: '26%', top: '84%' },
+    { left: '12%', top: '56%' },
   ];
-  return clock7[index % clock7.length];
+  return clock7Inside[index % clock7Inside.length];
 }
 
 export const GroupRingCard: React.FC<GroupRingCardProps> = ({
@@ -77,16 +90,16 @@ export const GroupRingCard: React.FC<GroupRingCardProps> = ({
     }
 
     // Determine smart popover placement depending on avatar side
-    const coords = getClockCoordinates(index, group.members.length);
+    const coords = getInnerCardCoordinates(index, group.members.length, isActive);
     const leftPct = parseFloat(coords.left);
     const topPct = parseFloat(coords.top);
 
     if (leftPct > 60) {
-      setPopoverCoords({ right: '12px', top: `${Math.min(topPct, 65)}%` });
+      setPopoverCoords({ right: '16px', top: `${Math.min(Math.max(topPct - 10, 15), 55)}%` });
     } else if (leftPct < 40) {
-      setPopoverCoords({ left: '12px', top: `${Math.min(topPct, 65)}%` });
+      setPopoverCoords({ left: '16px', top: `${Math.min(Math.max(topPct - 10, 15), 55)}%` });
     } else {
-      setPopoverCoords({ left: '50%', top: topPct > 50 ? '30%' : '20%' });
+      setPopoverCoords({ left: '50%', top: topPct > 50 ? '25%' : '55%' });
     }
 
     setSelectedMember(member);
@@ -110,20 +123,18 @@ export const GroupRingCard: React.FC<GroupRingCardProps> = ({
       onClick={handleCardClick}
       className={`relative w-full select-none transition-all duration-200 ${
         isActive
-          ? 'cursor-default my-3'
-          : 'cursor-pointer my-2 opacity-85 hover:opacity-100 hover:scale-[1.01]'
+          ? 'cursor-default my-2'
+          : 'cursor-pointer my-1.5 opacity-90 hover:opacity-100 hover:scale-[1.008]'
       } ${className}`}
     >
-      {/* Outer Padding Ring to house avatars sitting on the card perimeter */}
-      <div className={`relative px-3 ${isActive ? 'pt-7 pb-7' : 'pt-5 pb-5'}`}>
-        {/* The Card Body (phone-shaped rounded rectangle from sketch) */}
-        <div
-          className={`relative w-full rounded-3xl bg-surface border transition-all duration-200 overflow-hidden ${
-            isActive
-              ? 'border-border shadow-md py-8 px-6 min-h-[260px]'
-              : 'border-border-subtle bg-surface/85 py-6 px-5 min-h-[190px]'
-          }`}
-        >
+      {/* The Card Body — Avatars float strictly inside its borders */}
+      <div
+        className={`relative w-full rounded-3xl bg-surface border transition-all duration-200 ${
+          isActive
+            ? 'border-border shadow-lg py-8 px-6 min-h-[290px]'
+            : 'border-border-subtle bg-surface/90 py-5 px-5 min-h-[175px]'
+        }`}
+      >
           {/* Subtle Top Perforation Watermark */}
           <div className="absolute top-2 left-6 right-6 flex items-center justify-between text-[10px] font-mono tracking-widest text-muted/60 uppercase">
             <span>{group.category}</span>
@@ -207,7 +218,7 @@ export const GroupRingCard: React.FC<GroupRingCardProps> = ({
                       <div className="flex items-center justify-between text-[10px] text-muted uppercase tracking-wider font-mono">
                         <span className="flex items-center gap-1">
                           <Wallet size={11} weight="duotone" className="text-accent group-hover/pot:scale-110 transition-transform" />
-                          Pooled MoMo
+                          Pool Money
                         </span>
                         <span className="tabular-nums font-bold text-accent">{pooledPct}%</span>
                       </div>
@@ -244,11 +255,10 @@ export const GroupRingCard: React.FC<GroupRingCardProps> = ({
               </div>
             )}
           </div>
-        </div>
 
-        {/* Member Avatars Ringed Around the Card Perimeter (Clock Positions) */}
+        {/* Member Avatars Floating Strictly INSIDE Card Border Lines */}
         {group.members.map((member, index) => {
-          const coords = getClockCoordinates(index, group.members.length);
+          const coords = getInnerCardCoordinates(index, group.members.length, isActive);
           const isSelected = selectedMember?.id === member.id;
 
           return (
@@ -263,8 +273,8 @@ export const GroupRingCard: React.FC<GroupRingCardProps> = ({
               title={`${member.name} (${member.balanceXaf >= 0 ? '+' : ''}${member.balanceXaf} XAF)`}
               className={`absolute z-10 ${
                 isActive
-                  ? 'w-9 h-9 sm:w-10 sm:h-10 text-xs'
-                  : 'w-7 h-7 sm:w-8 sm:h-8 text-[10px] opacity-80'
+                  ? 'w-10 h-10 sm:w-11 sm:h-11 text-xs'
+                  : 'w-7 h-7 sm:w-8 sm:h-8 text-[10px] opacity-85'
               } rounded-full bg-surface-elevated border-2 flex items-center justify-center shadow-md transition-all duration-150 active:scale-95 ${
                 isSelected
                   ? 'border-accent scale-110 ring-2 ring-accent/30'

@@ -43,7 +43,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
         {/* Left Flank SaaS Illustration (where the full navbar was removed) */}
         <div
           className="pointer-events-auto hidden min-[360px]:flex flex-col items-center justify-center w-10 h-14 mb-1 rounded-2xl bg-surface/90 border border-border shadow-sm p-1 transition-all duration-200 hover:scale-105 select-none"
-          title="Pooled MoMo & Orange Money Contributions"
+          title="Pool Money & Orange Money Contributions"
         >
           <div className="w-6 h-6 rounded-lg bg-accent/15 text-accent flex items-center justify-center mb-0.5">
             <DeviceMobile size={15} weight="duotone" />

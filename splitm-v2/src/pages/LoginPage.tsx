@@ -4,6 +4,7 @@ import { Mail, Lock, Eye, EyeOff, Phone, KeyRound } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { useToast } from '../components/ui/Toast';
+import { SplitMLogo } from '../components/common/SplitMLogo';
 import { 
   loginWithEmail, 
   registerWithEmail, 
@@ -185,7 +186,9 @@ export default function LoginPage() {
           >
             Explore Dashboard (Design Review) &rarr;
           </Link>
-          <h1 className="text-3xl font-bold text-primary tracking-tight">SplitM</h1>
+          <div className="flex justify-center mb-2">
+            <SplitMLogo size="lg" textSize="2xl" />
+          </div>
           <p className="text-slate-400 mt-2 text-sm">Split expenses, not friendships.</p>
         </div>
 

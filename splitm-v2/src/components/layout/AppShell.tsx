@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { useSelector } from 'react-redux';
-import { Layers, LogOut, Moon, Sun } from 'lucide-react';
+import { LogOut, Moon, Sun } from 'lucide-react';
 import type { RootState } from '../../core/store/store';
 import { logout } from '../../modules/auth/auth.service';
 import SyncStatusBar from './SyncStatusBar';
 import { Button } from '../ui/Button';
 import GroupSelector from '../groups/GroupSelector';
+import { SplitMLogo } from '../common/SplitMLogo';
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -48,10 +49,9 @@ export default function AppShell({ children }: AppShellProps) {
       {/* Sticky top navbar (Desktop only - mobile uses the single PWA receipt screen layout) */}
       <header className="hidden md:block bg-surface border-b border-border sticky top-0 z-40 transition-colors duration-200">
         <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
-          {/* Left: app name + icon */}
+          {/* Left: authentic SplitM logo */}
           <div className="flex items-center gap-2">
-            <Layers className="h-5 w-5 text-primary" aria-hidden="true" />
-            <span className="font-bold text-primary text-lg tracking-tight">SplitM</span>
+            <SplitMLogo size="sm" textSize="md" />
           </div>
 
           {/* Center: GroupSelector */}

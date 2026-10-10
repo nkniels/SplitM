@@ -20,6 +20,7 @@ import { RecentReceiptsDrawer } from '../components/dashboard/RecentReceiptsDraw
 import { UserProfileModal } from '../components/dashboard/UserProfileModal';
 import { triggerHaptic } from '../core/utils/haptics';
 import type { RingMember } from '../components/dashboard/MemberBalancePopover';
+import { SplitMLogo } from '../components/common/SplitMLogo';
 import { ExpenseForm } from '../components/expenses/ExpenseForm';
 import GroupForm from '../components/groups/GroupForm';
 
@@ -429,9 +430,7 @@ export default function DashboardPage() {
         {/* Top Header Bar */}
         <header className="px-5 pt-4 pb-2 flex items-center justify-between z-20">
           <div className="flex items-center gap-2">
-            <span className="font-serif font-bold text-xl tracking-tight text-primary">
-              SplitM
-            </span>
+            <SplitMLogo size="sm" textSize="md" />
             <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded-full bg-border-subtle text-muted">
               Receipt Ledger
             </span>

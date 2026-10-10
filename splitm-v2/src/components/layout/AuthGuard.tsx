@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Navigate, Outlet, Link } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import { Loader2 } from 'lucide-react';
+import { LoadingSplashScreen } from '../common/LoadingSplashScreen';
 import type { RootState } from '../../core/store/store';
 
 export default function AuthGuard() {
@@ -21,17 +21,16 @@ export default function AuthGuard() {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4 text-center">
-        <Loader2 className="h-10 w-10 animate-spin text-primary mb-4" aria-label="Loading" />
-        <p className="text-slate-400 text-sm">Verifying session...</p>
+      <div className="relative min-h-screen">
+        <LoadingSplashScreen subtitle="Verifying session..." />
         {showSlowNotice && (
-          <div className="mt-6 flex flex-col items-center gap-3 animate-fade-in">
-            <p className="text-xs text-slate-500 max-w-xs">
+          <div className="fixed bottom-12 inset-x-0 z-60 flex flex-col items-center gap-2 px-4 animate-fade-in text-center">
+            <p className="text-xs text-muted max-w-xs">
               Authentication response is delayed. You can wait or proceed directly to login.
             </p>
             <Link
               to="/login"
-              className="text-xs font-semibold text-primary hover:underline px-3 py-1.5 rounded-md border border-primary/30"
+              className="text-xs font-semibold text-primary hover:underline px-3 py-1.5 rounded-md border border-border bg-surface shadow-sm"
             >
               Continue to Login &rarr;
             </Link>

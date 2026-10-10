@@ -1,5 +1,5 @@
 import assert from 'node:assert';
-import { FinanceEngine } from './splitm-v2/src/core/finance/FinanceEngine.ts';
+import { FinanceEngine } from '../splitm-v2/src/core/finance/FinanceEngine.ts';
 
 console.log('--- RUNNING FINANCE ENGINE RIGOROUS TEST SUITE ---');
 

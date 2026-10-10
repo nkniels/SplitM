@@ -8,6 +8,10 @@ ui-debug.log
 
 # Node dependencies
 node_modules/
+dist/
+splitm-v2/dist/
+.vite/
+*.tsbuildinfo
 
 # OS/IDE files
 .DS_Store
@@ -22,19 +26,15 @@ Thumbs.db
 
 # Local environment variables
 .env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+.env.*
+!.env.example
+splitm-v2/.env
+splitm-v2/.env.*
+!splitm-v2/.env.example
 
-# Build artifacts and temp build files
-splitm-v2/dist/
-splitm-v2/build_out.txt
-splitm-v2/build_err.txt
-splitm-v2/build_result.txt
-splitm-v2/tsc_out.txt
-splitm-v2/vite_out.txt
-splitm-v2/run_build.cjs
-splitm-v2/run_build.js
-splitm-v2/*.cmd
-build_result.txt
+# Build artifacts, logs and temp text outputs
+**/build*.txt
+**/tsc*.txt
+**/git_out.txt
+*.bak
+*.log

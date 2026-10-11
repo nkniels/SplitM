@@ -72,8 +72,10 @@ export default function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/splash" element={<DashboardSkeleton />} />
           <Route path="/skeleton" element={<DashboardSkeleton />} />
-          <Route path="/preview" element={<DashboardPage />} />
-          <Route path="/dashboard" element={<DashboardPage />} />
+          <Route element={<AppShellLayout />}>
+            <Route path="/preview" element={<DashboardPage />} />
+            <Route path="/dashboard" element={<DashboardPage />} />
+          </Route>
           <Route element={<AuthGuard />}>
             <Route element={<AppShellLayout />}>
               <Route path="/" element={<DashboardPage />} />

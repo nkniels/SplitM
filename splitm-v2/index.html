@@ -29,13 +29,38 @@
       })();
     </script>
     <style>
-      @keyframes splitmZoomIn {
-        0% { transform: scale(0.6); opacity: 0; }
-        100% { transform: scale(1); opacity: 1; }
+      @keyframes splitmPulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.45; }
       }
-      @keyframes splitmShimmer {
-        0% { transform: translateX(-100%); }
-        100% { transform: translateX(100%); }
+      .skel-block {
+        background: rgba(140, 150, 165, 0.16);
+        animation: splitmPulse 1.8s ease-in-out infinite;
+      }
+      .dark .skel-block {
+        background: rgba(255, 255, 255, 0.08);
+      }
+      .skel-card {
+        background: #FFFFFF;
+        border: 1px solid #E5E0D5;
+      }
+      .dark .skel-card {
+        background: #22201D;
+        border: 1px solid #36322C;
+      }
+      .skel-avatar {
+        position: absolute;
+        width: 38px;
+        height: 38px;
+        border-radius: 999px;
+        background: rgba(140, 150, 165, 0.2);
+        border: 2px solid rgba(220, 215, 205, 0.8);
+        transform: translate(-50%, -50%);
+        animation: splitmPulse 1.8s ease-in-out infinite;
+      }
+      .dark .skel-avatar {
+        background: rgba(255, 255, 255, 0.1);
+        border: 2px solid rgba(60, 55, 48, 0.9);
       }
       .splitm-fallback-btn {
         transition: all 0.2s ease;
@@ -46,26 +71,69 @@
       }
     </style>
   </head>
-  <body class="bg-background text-slate-100 antialiased selection:bg-primary/20 selection:text-primary">
+  <body class="bg-background text-primary antialiased selection:bg-accent/20">
     <div id="root">
-      <div id="splitm-initial-splash" style="min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; font-family:'DM Sans',system-ui,-apple-system,sans-serif; text-align:center; position:relative; overflow:hidden;">
-        <!-- Authentic SplitM Dual-Stroke SVG Mark -->
-        <svg viewBox="0 0 100 100" style="width:96px; height:96px; margin-bottom:14px; filter:drop-shadow(0 4px 16px rgba(56,189,248,0.3)); animation:splitmZoomIn 0.8s cubic-bezier(0.175,0.885,0.32,1.275) forwards;">
-          <path d="M15 85 L15 35 L40 60 L60 30" fill="none" stroke="#004aad" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" />
-          <path d="M40 85 L60 55 L85 85 L85 30" fill="none" stroke="#38bdf8" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" />
-        </svg>
-
-        <!-- Authentic Dual-Gradient Logo Typography -->
-        <h1 style="margin:0; font-size:2.25rem; font-weight:800; letter-spacing:-0.02em; line-height:1;">
-          <span style="background:linear-gradient(90deg,#004aad,#38bdf8); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">Split</span><span style="color:#38bdf8; text-shadow:0 0 16px rgba(56,189,248,0.6);">M</span>
-        </h1>
-
-        <!-- Shimmering Skeleton Loader Bar from Original SplitM -->
-        <div style="width:160px; height:8px; border-radius:999px; background:rgba(120,130,150,0.2); overflow:hidden; position:relative; margin-top:20px;">
-          <div style="position:absolute; inset:0; background:linear-gradient(90deg,transparent,rgba(56,189,248,0.7),transparent); animation:splitmShimmer 1.5s infinite linear;"></div>
+      <!-- High-Fidelity UI Skeleton Placeholder (Loads instantly before JS bundles) -->
+      <div id="splitm-initial-skeleton" style="min-height:100vh; max-width:448px; margin:0 auto; padding:16px; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box;">
+        <!-- Header Skeleton -->
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <div class="skel-block" style="width:32px; height:32px; border-radius:10px;"></div>
+            <div class="skel-block" style="width:72px; height:16px; border-radius:6px;"></div>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <div class="skel-block" style="width:32px; height:32px; border-radius:10px;"></div>
+            <div class="skel-block" style="width:32px; height:32px; border-radius:999px;"></div>
+          </div>
         </div>
 
-        <p style="font-size:0.75rem; font-family:'JetBrains Mono',monospace; color:#888; margin-top:12px; letter-spacing:0.08em; text-transform:uppercase;">Loading SplitM...</p>
+        <!-- Main Card Skeleton with Inner Avatars -->
+        <div class="skel-card" style="border-radius:24px; padding:28px 24px; min-height:280px; position:relative; overflow:hidden; box-sizing:border-box;">
+          <div style="display:flex; justify-content:space-between; margin-bottom:20px;">
+            <div class="skel-block" style="width:84px; height:12px; border-radius:4px;"></div>
+            <div class="skel-block" style="width:60px; height:12px; border-radius:4px;"></div>
+          </div>
+          <div style="display:flex; flex-direction:column; align-items:center; margin:16px 0 24px;">
+            <div class="skel-block" style="width:190px; height:26px; border-radius:8px; margin-bottom:8px;"></div>
+            <div class="skel-block" style="width:130px; height:14px; border-radius:4px; margin-bottom:12px;"></div>
+            <div class="skel-block" style="width:160px; height:22px; border-radius:999px;"></div>
+          </div>
+          <!-- Financial Grid -->
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; padding-top:16px; border-top:1px dashed rgba(140,150,165,0.2);">
+            <div class="skel-block" style="height:56px; border-radius:12px;"></div>
+            <div class="skel-block" style="height:56px; border-radius:12px;"></div>
+          </div>
+          <!-- Inner Floating Avatars -->
+          <div class="skel-avatar" style="left:14%; top:24%;"></div>
+          <div class="skel-avatar" style="left:50%; top:16%;"></div>
+          <div class="skel-avatar" style="left:86%; top:24%;"></div>
+          <div class="skel-avatar" style="left:86%; top:78%;"></div>
+          <div class="skel-avatar" style="left:50%; top:86%;"></div>
+          <div class="skel-avatar" style="left:14%; top:78%;"></div>
+        </div>
+
+        <!-- Secondary Inactive Card Skeleton -->
+        <div class="skel-card" style="border-radius:24px; padding:20px; min-height:160px; position:relative; margin-top:20px; opacity:0.85; box-sizing:border-box;">
+          <div style="display:flex; justify-content:space-between; margin-bottom:12px;">
+            <div class="skel-block" style="width:70px; height:10px; border-radius:4px;"></div>
+            <div class="skel-block" style="width:50px; height:10px; border-radius:4px;"></div>
+          </div>
+          <div style="display:flex; flex-direction:column; align-items:center; margin:10px 0;">
+            <div class="skel-block" style="width:140px; height:20px; border-radius:6px; margin-bottom:6px;"></div>
+            <div class="skel-block" style="width:100px; height:12px; border-radius:4px;"></div>
+          </div>
+          <div class="skel-avatar" style="left:16%; top:30%; width:28px; height:28px;"></div>
+          <div class="skel-avatar" style="left:84%; top:30%; width:28px; height:28px;"></div>
+        </div>
+
+        <!-- Bottom Navigation Dock Skeleton -->
+        <div style="margin-top:28px; height:56px; border-radius:24px; display:flex; align-items:center; justify-content:space-around; padding:0 8px;" class="skel-card">
+          <div class="skel-block" style="width:24px; height:24px; border-radius:6px;"></div>
+          <div class="skel-block" style="width:24px; height:24px; border-radius:6px;"></div>
+          <div class="skel-block" style="width:40px; height:40px; border-radius:999px; position:relative; top:-8px;"></div>
+          <div class="skel-block" style="width:24px; height:24px; border-radius:6px;"></div>
+          <div class="skel-block" style="width:24px; height:24px; border-radius:6px;"></div>
+        </div>
       </div>
     </div>
 

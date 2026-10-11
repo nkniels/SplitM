@@ -6,7 +6,7 @@ import { auth } from './core/config/firebase';
 import { setUser, setAuthLoading } from './modules/auth/auth.slice';
 import AuthGuard from './components/layout/AuthGuard';
 import AppShell from './components/layout/AppShell';
-import { LoadingSplashScreen } from './components/common/LoadingSplashScreen';
+import { DashboardSkeleton } from './components/common/DashboardSkeleton';
 
 // Lazy loading route components for code splitting
 const DashboardPage = lazy(() => import('./pages/DashboardPage'));
@@ -55,10 +55,11 @@ export default function App() {
 
   return (
     <div className="font-sans">
-      <Suspense fallback={<LoadingSplashScreen />}>
+      <Suspense fallback={<DashboardSkeleton />}>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
-          <Route path="/splash" element={<LoadingSplashScreen />} />
+          <Route path="/splash" element={<DashboardSkeleton />} />
+          <Route path="/skeleton" element={<DashboardSkeleton />} />
           <Route path="/preview" element={<DashboardPage />} />
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route element={<AuthGuard />}>

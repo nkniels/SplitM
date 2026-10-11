@@ -42,6 +42,7 @@ export const MemberBalancePopover: React.FC<MemberBalancePopoverProps> = ({
             <img
               src={member.avatarUrl}
               alt={member.name}
+              referrerPolicy="no-referrer"
               className="w-8 h-8 rounded-full object-cover border border-border"
             />
           ) : (

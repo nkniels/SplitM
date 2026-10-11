@@ -4,7 +4,7 @@ import { Sun, Moon } from '@phosphor-icons/react';
 import type { RootState, AppDispatch } from '../core/store/store';
 import { loadGroups, loadMembersThunk } from '../modules/groups/group.thunks';
 import { loadExpenses } from '../modules/expenses/expense.thunks';
-import { setGroups, setMembers } from '../modules/groups/group.slice';
+import { setGroups, setMembers, setActiveGroup } from '../modules/groups/group.slice';
 import { setExpenses } from '../modules/expenses/expense.slice';
 import { subscribeToUserGroups, subscribeToGroupMembers } from '../modules/groups/group.service';
 import { subscribeToGroupExpenses } from '../modules/expenses/expense.service';
@@ -196,7 +196,8 @@ export default function DashboardPage() {
   const firestoreMembers = useSelector((state: RootState) => state.groups.members);
   const firestoreExpenses = useSelector((state: RootState) => state.expenses.expenses);
 
-  const [activeGroupId, setActiveGroupId] = useState<string>(INITIAL_GROUPS[0].id);
+  const reduxActiveGroupId = useSelector((state: RootState) => state.groups.activeGroupId);
+  const [activeGroupId, setActiveGroupId] = useState<string>(reduxActiveGroupId || INITIAL_GROUPS[0].id);
   const [activeTab, setActiveTab] = useState<NavTabId>('dashboard');
   const [isAddSheetOpen, setIsAddSheetOpen] = useState(false);
   const [showExpenseForm, setShowExpenseForm] = useState(false);
@@ -210,11 +211,29 @@ export default function DashboardPage() {
   const [settlingMember, setSettlingMember] = useState<RingMember | null>(null);
   const [isRecentReceiptsOpen, setIsRecentReceiptsOpen] = useState(false);
   const [isUserProfileOpen, setIsUserProfileOpen] = useState(false);
-  const [userProfile, setUserProfile] = useState({
-    name: 'Bryan T. (You)',
-    avatarUrl: '/avatars/adult_1.jpg',
+  const [userProfile, setUserProfile] = useState(() => ({
+    name: currentUser?.displayName ? `${currentUser.displayName} (You)` : 'You',
+    avatarUrl: currentUser?.photoURL || '/avatars/adult_1.jpg',
     provider: 'orange' as 'mtn' | 'orange',
-  });
+  }));
+
+  // Automatically adapt to Google profile picture & name when signed in
+  useEffect(() => {
+    if (currentUser) {
+      setUserProfile((prev) => ({
+        ...prev,
+        name: currentUser.displayName ? `${currentUser.displayName} (You)` : prev.name,
+        avatarUrl: currentUser.photoURL || prev.avatarUrl,
+      }));
+    }
+  }, [currentUser]);
+
+  // Synchronize active group with Redux (e.g. when switched from Desktop Top Navbar)
+  useEffect(() => {
+    if (reduxActiveGroupId && reduxActiveGroupId !== activeGroupId) {
+      setActiveGroupId(reduxActiveGroupId);
+    }
+  }, [reduxActiveGroupId, activeGroupId]);
 
   // Handle Pooled MoMo Contribution
   const handleContributeSuccess = (groupId: string, amount: number) => {
@@ -326,8 +345,34 @@ export default function DashboardPage() {
   // Derive cards from Firestore if user has groups; otherwise use mock domain data
   const groups = useMemo<GroupCardData[]>(() => {
     const groupList = Object.values(firestoreGroups);
+    const activePhoto = currentUser?.photoURL || userProfile.avatarUrl;
+    const activeDisplayName = currentUser?.displayName
+      ? `${currentUser.displayName} (You)`
+      : userProfile.name;
+    const activeInitials = currentUser?.displayName
+      ? currentUser.displayName
+          .split(' ')
+          .map((n) => n[0])
+          .slice(0, 2)
+          .join('')
+          .toUpperCase()
+      : 'YOU';
+
     if (!currentUser || groupList.length === 0) {
-      return localGroups;
+      return localGroups.map((grp) => ({
+        ...grp,
+        members: grp.members.map((m) => {
+          if (m.name.toLowerCase().includes('you') || m.id === 'm2') {
+            return {
+              ...m,
+              name: activeDisplayName,
+              avatarUrl: activePhoto,
+              initials: activeInitials,
+            };
+          }
+          return m;
+        }),
+      }));
     }
 
     return groupList.map((grp) => {
@@ -346,7 +391,7 @@ export default function DashboardPage() {
           : {};
 
       const currentMember =
-        grpMembers.find((m) => m.name.toLowerCase().includes('you')) ||
+        grpMembers.find((m) => m.name.toLowerCase().includes('you') || ((m as any).userId && (m as any).userId === currentUser?.uid)) ||
         grpMembers[0];
       const userBalance = currentMember && balances[currentMember.id] ? balances[currentMember.id] : 0;
 
@@ -360,15 +405,18 @@ export default function DashboardPage() {
 
       const ringMembers = grpMembers.map((m) => {
         const bal = balances[m.id] ?? 0;
+        const isCurrent = Boolean(((m as any).userId && (m as any).userId === currentUser?.uid) || m.name.toLowerCase().includes('you'));
         const nameParts = m.name.split(' ');
-        const initials =
-          nameParts.length > 1
-            ? `${nameParts[0][0]}${nameParts[1][0]}`.toUpperCase()
-            : m.name.slice(0, 2).toUpperCase();
+        const initials = isCurrent
+          ? activeInitials
+          : nameParts.length > 1
+          ? `${nameParts[0][0]}${nameParts[1][0]}`.toUpperCase()
+          : m.name.slice(0, 2).toUpperCase();
 
         return {
           id: m.id,
-          name: m.name,
+          name: isCurrent ? activeDisplayName : m.name,
+          avatarUrl: isCurrent ? activePhoto : m.avatar || '',
           initials,
           balanceXaf: bal,
           paymentProvider: 'mtn' as const,
@@ -376,6 +424,18 @@ export default function DashboardPage() {
       });
 
       const totalSpent = grpExpenses.reduce((sum, e) => sum + e.amount, 0);
+
+      const defaultMembers = INITIAL_GROUPS[0].members.map((m) => {
+        if (m.name.toLowerCase().includes('you') || m.id === 'm2') {
+          return {
+            ...m,
+            name: activeDisplayName,
+            avatarUrl: activePhoto,
+            initials: activeInitials,
+          };
+        }
+        return m;
+      });
 
       return {
         id: grp.id,
@@ -387,10 +447,10 @@ export default function DashboardPage() {
         totalExpenses: totalSpent,
         pooledCollected: grp.budget ? Math.min(totalSpent, grp.budget) : undefined,
         pooledTarget: grp.budget || undefined,
-        members: ringMembers.length > 0 ? ringMembers : INITIAL_GROUPS[0].members,
+        members: ringMembers.length > 0 ? ringMembers : defaultMembers,
       };
     });
-  }, [firestoreGroups, firestoreMembers, firestoreExpenses, currentUser, localGroups]);
+  }, [firestoreGroups, firestoreMembers, firestoreExpenses, currentUser, localGroups, userProfile]);
 
   // Light / Dark Theme toggle helper
   const [isDark, setIsDark] = useState(() => {
@@ -416,6 +476,7 @@ export default function DashboardPage() {
   // Swap group positions smoothly when an inactive card is tapped
   const handleSelectGroup = (newActiveId: string) => {
     setActiveGroupId(newActiveId);
+    dispatch(setActiveGroup(newActiveId));
   };
 
   const activeGroup = groups.find((g) => g.id === activeGroupId) || groups[0];
@@ -427,8 +488,8 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-background text-primary selection:bg-accent/20 transition-colors duration-200">
       {/* Mobile Screen Container: Edge-to-edge portrait on mobile (<768px), elegant centered phone canvas on larger screens */}
       <div className="w-full max-w-md mx-auto min-h-screen flex flex-col justify-between relative shadow-sm">
-        {/* Top Header Bar */}
-        <header className="px-5 pt-4 pb-2 flex items-center justify-between z-20">
+        {/* Top Header Bar (Mobile only — on desktop, the clean AppShell top navbar handles branding, theme & account) */}
+        <header className="md:hidden px-5 pt-4 pb-2 flex items-center justify-between z-20">
           <div className="flex items-center gap-2">
             <SplitMLogo size="sm" textSize="md" />
             <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded-full bg-border-subtle text-muted">
@@ -455,7 +516,7 @@ export default function DashboardPage() {
 
         {/* Main Content Area (The "Dashboard" from the sketch) */}
         <main
-          className="flex-1 px-4 pt-1 pb-24 overflow-y-auto"
+          className="flex-1 px-4 pt-1 md:pt-4 pb-24 overflow-y-auto"
           style={{ scrollBehavior: 'smooth' }}
         >
           {/* Active Group Card Header Label */}
@@ -525,6 +586,7 @@ export default function DashboardPage() {
         {/* Bottom Navigation Bar with Signature Receipt-Tear Divider & Center Plus */}
         <BottomNav
           activeTab={activeTab}
+          userAvatarUrl={currentUser?.photoURL || userProfile.avatarUrl}
           onTabChange={(tab) => {
             setActiveTab(tab);
             triggerHaptic('light');

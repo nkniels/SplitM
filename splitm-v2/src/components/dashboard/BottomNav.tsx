@@ -15,6 +15,7 @@ interface BottomNavProps {
   activeTab: NavTabId;
   onTabChange: (tab: NavTabId) => void;
   onAddClick: () => void;
+  userAvatarUrl?: string;
   className?: string;
 }
 
@@ -31,6 +32,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
   activeTab,
   onTabChange,
   onAddClick,
+  userAvatarUrl,
   className = '',
 }) => {
   return (
@@ -154,10 +156,23 @@ export const BottomNav: React.FC<BottomNavProps> = ({
               aria-label="Account Settings"
               aria-current={activeTab === 'profile' ? 'page' : undefined}
             >
-              <User
-                size={21}
-                weight={activeTab === 'profile' ? 'fill' : 'duotone'}
-              />
+              {userAvatarUrl ? (
+                <div className={`w-[22px] h-[22px] rounded-full overflow-hidden border transition-all ${
+                  activeTab === 'profile' ? 'ring-2 ring-primary border-primary' : 'border-border'
+                }`}>
+                  <img
+                    src={userAvatarUrl}
+                    alt="Profile"
+                    referrerPolicy="no-referrer"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              ) : (
+                <User
+                  size={21}
+                  weight={activeTab === 'profile' ? 'fill' : 'duotone'}
+                />
+              )}
               <span className="text-[9px] font-medium tracking-tight mt-0.5">
                 Profile
               </span>

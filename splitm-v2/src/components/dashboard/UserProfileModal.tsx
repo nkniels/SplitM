@@ -45,6 +45,10 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
     onClose();
   };
 
+  const allPresets = currentAvatarUrl && !AVATAR_PRESETS.includes(currentAvatarUrl)
+    ? [currentAvatarUrl, ...AVATAR_PRESETS]
+    : AVATAR_PRESETS;
+
   return (
     <div
       className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in"
@@ -88,6 +92,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
               <img
                 src={avatarUrl}
                 alt={name}
+                referrerPolicy="no-referrer"
                 className="w-16 h-16 rounded-full object-cover border-2 border-accent shadow-md mx-auto"
               />
               <span className="absolute bottom-0 right-0 p-1 rounded-full bg-accent text-white">
@@ -96,10 +101,11 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
             </div>
 
             <div className="flex items-center justify-center gap-1.5 pt-1">
-              {AVATAR_PRESETS.map((preset, idx) => (
+              {allPresets.map((preset, idx) => (
                 <button
                   key={idx}
                   type="button"
+                  title={preset === currentAvatarUrl && preset.startsWith('http') ? 'Google Profile Picture' : `Avatar ${idx + 1}`}
                   onClick={() => {
                     triggerHaptic('light');
                     setAvatarUrl(preset);
@@ -108,7 +114,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                     avatarUrl === preset ? 'ring-2 ring-accent scale-105' : 'opacity-70 hover:opacity-100'
                   }`}
                 >
-                  <img src={preset} alt="" className="w-full h-full object-cover" />
+                  <img src={preset} alt="" referrerPolicy="no-referrer" className="w-full h-full object-cover" />
                 </button>
               ))}
             </div>

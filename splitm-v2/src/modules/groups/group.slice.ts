@@ -8,8 +8,33 @@ export interface GroupState {
 }
 
 const initialState: GroupState = {
-  groups: {},
-  activeGroupId: null,
+  groups: {
+    'grp-bastos': {
+      id: 'grp-bastos',
+      name: 'Bastos Apartment',
+      description: 'Flatmates • Yaoundé',
+      currency: 'XAF',
+      budget: 80000,
+      members: [],
+      expenses: [],
+      createdBy: 'system',
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    },
+    'grp-kribi': {
+      id: 'grp-kribi',
+      name: 'Kribi Beach Trip',
+      description: 'Travel • Coastal',
+      currency: 'XAF',
+      budget: 320000,
+      members: [],
+      expenses: [],
+      createdBy: 'system',
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    },
+  },
+  activeGroupId: 'grp-bastos',
   members: {},
 };
 

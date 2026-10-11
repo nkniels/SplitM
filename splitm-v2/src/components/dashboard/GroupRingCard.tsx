@@ -289,6 +289,7 @@ export const GroupRingCard: React.FC<GroupRingCardProps> = ({
                   src={member.avatarUrl}
                   alt={member.name}
                   loading="lazy"
+                  referrerPolicy="no-referrer"
                   className="w-full h-full rounded-full object-cover"
                   onError={(e) => {
                     e.currentTarget.style.display = 'none';

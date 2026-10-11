@@ -1,5 +1,5 @@
-import React from 'react';
 import { Coins, Wallet, Receipt, CreditCard } from '@phosphor-icons/react';
+import { UndrawCollaborators } from '../illustrations/UndrawIllustrations';
 
 interface LoadingSplashScreenProps {
   subtitle?: string;
@@ -93,6 +93,11 @@ export const LoadingSplashScreen: React.FC<LoadingSplashScreenProps> = ({
             {subtitle}
           </p>
         )}
+
+        {/* unDraw Group Sharing Illustration */}
+        <div className="w-48 h-28 mt-4 opacity-85">
+          <UndrawCollaborators primaryColor="#0284C7" secondaryColor="#D95D39" />
+        </div>
       </div>
     </div>
   );

@@ -14,6 +14,7 @@ import {
   verifyPhoneOtp 
 } from '../modules/auth/auth.service';
 import { cn } from '../core/utils/helpers';
+import { UndrawSecureLogin } from '../components/illustrations/UndrawIllustrations';
 import type { ConfirmationResult } from 'firebase/auth';
 
 type Tab = 'signin' | 'register' | 'phone';
@@ -190,6 +191,11 @@ export default function LoginPage() {
             <SplitMLogo size="lg" textSize="2xl" />
           </div>
           <p className="text-slate-400 mt-2 text-sm">Split expenses, not friendships.</p>
+
+          {/* unDraw Hero Illustration */}
+          <div className="w-48 h-28 mx-auto mt-3 mb-1 opacity-90 transition-transform hover:scale-105">
+            <UndrawSecureLogin primaryColor="#0284C7" secondaryColor="#D95D39" />
+          </div>
         </div>
 
         {/* Card */}

@@ -5,10 +5,9 @@ import {
   Plus,
   Users,
   User,
-  DeviceMobile,
-  CheckCircle,
 } from '@phosphor-icons/react';
 import { ReceiptTearDivider } from './ReceiptTearDivider';
+import { UndrawTransferMoney, UndrawReceipt } from '../illustrations/UndrawIllustrations';
 
 export type NavTabId = 'dashboard' | 'history' | 'groups' | 'profile';
 
@@ -40,16 +39,16 @@ export const BottomNav: React.FC<BottomNavProps> = ({
       aria-label="Primary navigation dock"
     >
       <div className="max-w-md mx-auto flex items-end justify-center gap-1.5 sm:gap-2 relative">
-        {/* Left Flank SaaS Illustration (where the full navbar was removed) */}
+        {/* Left Flank unDraw SaaS Illustration */}
         <div
-          className="pointer-events-auto hidden min-[360px]:flex flex-col items-center justify-center w-10 h-14 mb-1 rounded-2xl bg-surface/90 border border-border shadow-sm p-1 transition-all duration-200 hover:scale-105 select-none"
-          title="Pool Money & Orange Money Contributions"
+          className="pointer-events-auto hidden min-[360px]:flex flex-col items-center justify-center w-12 h-14 mb-1 rounded-2xl bg-surface/95 border border-border shadow-sm p-1 transition-all duration-200 hover:scale-105 select-none overflow-hidden group"
+          title="Pool Money & Mobile Money Payments (Illustration by unDraw)"
         >
-          <div className="w-6 h-6 rounded-lg bg-accent/15 text-accent flex items-center justify-center mb-0.5">
-            <DeviceMobile size={15} weight="duotone" />
+          <div className="w-8 h-7 flex items-center justify-center group-hover:scale-110 transition-transform">
+            <UndrawTransferMoney width={30} height={22} primaryColor="#0284C7" secondaryColor="#D95D39" />
           </div>
-          <span className="text-[8px] font-mono font-bold tracking-tighter text-muted uppercase">
-            MoMo
+          <span className="text-[7.5px] font-mono font-bold tracking-tight text-muted uppercase">
+            Pool
           </span>
         </div>
 
@@ -169,15 +168,15 @@ export const BottomNav: React.FC<BottomNavProps> = ({
           </div>
         </nav>
 
-        {/* Right Flank SaaS Illustration (where the full navbar was removed) */}
+        {/* Right Flank unDraw SaaS Illustration */}
         <div
-          className="pointer-events-auto hidden min-[360px]:flex flex-col items-center justify-center w-10 h-14 mb-1 rounded-2xl bg-surface/90 border border-border shadow-sm p-1 transition-all duration-200 hover:scale-105 select-none"
-          title="Zero-Sum Greedy Debt Settlement Engine"
+          className="pointer-events-auto hidden min-[360px]:flex flex-col items-center justify-center w-12 h-14 mb-1 rounded-2xl bg-surface/95 border border-border shadow-sm p-1 transition-all duration-200 hover:scale-105 select-none overflow-hidden group"
+          title="Zero-Sum Greedy Debt Settlement & Vouchers (Illustration by unDraw)"
         >
-          <div className="w-6 h-6 rounded-lg bg-success/15 text-success flex items-center justify-center mb-0.5">
-            <CheckCircle size={15} weight="duotone" />
+          <div className="w-8 h-7 flex items-center justify-center group-hover:scale-110 transition-transform">
+            <UndrawReceipt width={30} height={22} primaryColor="#0284C7" secondaryColor="#10B981" />
           </div>
-          <span className="text-[8px] font-mono font-bold tracking-tighter text-muted uppercase">
+          <span className="text-[7.5px] font-mono font-bold tracking-tight text-muted uppercase">
             Σ=0
           </span>
         </div>

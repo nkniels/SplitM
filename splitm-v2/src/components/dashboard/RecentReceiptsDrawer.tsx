@@ -8,6 +8,7 @@ import {
 } from '@phosphor-icons/react';
 import { triggerHaptic } from '../../core/utils/haptics';
 import { ReceiptTearDivider } from './ReceiptTearDivider';
+import { UndrawReceipt } from '../illustrations/UndrawIllustrations';
 import type { GroupCardData } from './GroupRingCard';
 
 interface RecentReceiptsDrawerProps {
@@ -105,6 +106,19 @@ export const RecentReceiptsDrawer: React.FC<RecentReceiptsDrawerProps> = ({
 
         {/* Scrollable Receipts List */}
         <div className="p-5 overflow-y-auto space-y-4">
+          {/* unDraw Header Illustration Card */}
+          <div className="p-3 rounded-2xl bg-background/50 border border-border flex items-center gap-3">
+            <div className="w-20 h-16 shrink-0 flex items-center justify-center">
+              <UndrawReceipt width={75} height={60} primaryColor="#0284C7" secondaryColor="#D95D39" />
+            </div>
+            <div>
+              <h4 className="text-xs font-semibold text-primary font-serif">Verified Audit Trail</h4>
+              <p className="text-[11px] text-muted font-sans mt-0.5">
+                Every receipt is timestamped and reconciled with zero-sum mathematical balance.
+              </p>
+            </div>
+          </div>
+
           <div className="flex items-center justify-between text-xs font-mono text-muted">
             <span>TOTAL EXPENDITURES</span>
             <span className="font-bold text-primary tabular-nums">

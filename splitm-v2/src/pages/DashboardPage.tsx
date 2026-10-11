@@ -515,8 +515,9 @@ export default function DashboardPage() {
           {/* End of Receipt Paper Watermark */}
           <div className="mt-8 mb-4 text-center">
             <div className="w-16 h-[1px] bg-border mx-auto mb-2" />
-            <p className="text-[10px] font-mono text-muted/60 tracking-widest uppercase">
-              End of Active Ledger • SplitM PWA
+            <p className="text-[10px] font-mono text-muted/60 tracking-wider">
+              <span className="uppercase tracking-widest">End of Active Ledger • </span>
+              <span className="font-semibold text-muted">SplitM</span> PWA
             </p>
           </div>
         </main>

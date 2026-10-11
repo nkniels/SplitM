@@ -89,7 +89,7 @@ export const LoadingSplashScreen: React.FC<LoadingSplashScreenProps> = ({
 
         {/* Optional Subtitle */}
         {subtitle && (
-          <p className="mt-3 text-xs font-mono tracking-wider text-muted uppercase animate-fade-in">
+          <p className="mt-3 text-xs font-mono tracking-wider text-muted animate-fade-in">
             {subtitle}
           </p>
         )}

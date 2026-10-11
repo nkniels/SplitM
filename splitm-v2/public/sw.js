@@ -1,4 +1,4 @@
-const CACHE_NAME = 'splitm-v2-cache-v3';
+const CACHE_NAME = 'splitm-v2-cache-v4';
 const STATIC_ASSETS = [
   '/manifest.json',
   '/favicon.svg'

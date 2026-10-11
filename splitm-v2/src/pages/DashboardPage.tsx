@@ -12,7 +12,7 @@ import { FinanceEngine } from '../core/finance/FinanceEngine';
 import type { Group } from '../core/types';
 import { GroupRingCard, type GroupCardData } from '../components/dashboard/GroupRingCard';
 import { BottomNav, type NavTabId } from '../components/dashboard/BottomNav';
-import { AddActionSheet } from '../components/dashboard/AddActionSheet';
+import { AddFlowSheet } from '../components/addFlow/AddFlowSheet';
 import { PooledMoMoDrawer } from '../components/dashboard/PooledMoMoDrawer';
 import { DebtSettlementModal } from '../components/dashboard/DebtSettlementModal';
 import { GroupReceiptShareModal } from '../components/dashboard/GroupReceiptShareModal';
@@ -602,21 +602,18 @@ export default function DashboardPage() {
           }}
         />
 
-        {/* Bottom Sheet Modal for Adding Expense / Pooled MoMo Payment */}
-        <AddActionSheet
+        {/* Full-Screen Slide-Up Flow for Central Plus Button */}
+        <AddFlowSheet
           isOpen={isAddSheetOpen}
           onClose={() => setIsAddSheetOpen(false)}
-          activeGroupName={activeGroup.name}
-          onAddExpense={() => {
-            if (activeRealMembers.length > 0) {
-              setShowExpenseForm(true);
-            } else {
-              setShowGroupForm(true);
-            }
+          groups={localGroups}
+          defaultGroupId={activeGroup.id}
+          onGroupCreated={(newGrp) => {
+            setLocalGroups((prev) => [newGrp, ...prev]);
+            setActiveGroupId(newGrp.id);
           }}
-          onStartPooled={() => {
-            setIsAddSheetOpen(false);
-            setIsPooledDrawerOpen(true);
+          onRequestCreateGroup={() => {
+            setShowGroupForm(true);
           }}
         />
 

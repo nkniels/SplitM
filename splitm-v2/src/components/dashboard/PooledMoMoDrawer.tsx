@@ -34,7 +34,6 @@ export const PooledMoMoDrawer: React.FC<PooledMoMoDrawerProps> = ({
   const [isEditingPhone, setIsEditingPhone] = useState<boolean>(false);
   const [isSimulatingPush, setIsSimulatingPush] = useState<boolean>(false);
   const [pushStage, setPushStage] = useState<'dispatching' | 'prompt' | 'success'>('dispatching');
-  const [pinInput, setPinInput] = useState<string>('');
 
   if (!isOpen) return null;
 
@@ -53,7 +52,6 @@ export const PooledMoMoDrawer: React.FC<PooledMoMoDrawerProps> = ({
     triggerHaptic('medium');
     setIsSimulatingPush(true);
     setPushStage('dispatching');
-    setPinInput('');
 
     // Simulate carrier network push dispatching to attached number
     setTimeout(() => {
@@ -375,7 +373,7 @@ export const PooledMoMoDrawer: React.FC<PooledMoMoDrawerProps> = ({
             )}
 
             {pushStage === 'prompt' && (
-              <form onSubmit={handleApproveWithdrawal} className="space-y-4">
+              <div className="space-y-4">
                 <div className="flex items-center justify-between border-b border-white/10 pb-3">
                   <div className="flex items-center gap-2">
                     <div
@@ -392,46 +390,49 @@ export const PooledMoMoDrawer: React.FC<PooledMoMoDrawerProps> = ({
                   </span>
                 </div>
 
-                {/* Carrier Network STK Prompt Card */}
-                <div className="p-3.5 rounded-xl bg-black/60 border border-white/10 space-y-2 text-xs font-mono text-white/90">
-                  <div className="flex justify-between text-[11px] text-white/60">
-                    <span>Attached Account:</span>
-                    <span className="text-white font-bold">{userPhone}</span>
+                {/* Handset Push Notification Banner */}
+                <div className="p-4 rounded-2xl bg-black/60 border border-white/10 space-y-3">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-accent/20 text-accent flex items-center justify-center shrink-0 mt-0.5 animate-bounce">
+                      <DeviceMobile size={22} weight="duotone" />
+                    </div>
+                    <div>
+                      <h5 className="text-xs font-mono font-bold text-white flex items-center gap-1.5">
+                        Prompt Dispatched to Your Handset
+                      </h5>
+                      <p className="text-[11px] text-white/80 font-sans leading-relaxed mt-1">
+                        A transfer validation dialog has been pushed directly to <strong className="text-white font-mono">{userPhone}</strong> by your telecom operator (<strong className="text-accent">{provider === 'mtn' ? 'MTN' : 'Orange'}</strong>).
+                      </p>
+                    </div>
                   </div>
-                  <div className="flex justify-between">
-                    <span>Debit Reference:</span>
-                    <span className="text-accent">Pool Pot: {group.name}</span>
+
+                  <div className="p-2.5 rounded-xl bg-white/5 border border-white/10 space-y-1.5 text-[11px] font-mono text-white/90">
+                    <div className="flex justify-between text-white/60">
+                      <span>Recipient / Pot:</span>
+                      <span className="text-accent font-semibold">{group.name}</span>
+                    </div>
+                    <div className="flex justify-between text-white/60">
+                      <span>Withdrawal Amount:</span>
+                      <span className="text-success font-bold">{selectedAmount.toLocaleString('en-US')} XAF</span>
+                    </div>
                   </div>
-                  <div className="flex justify-between text-sm font-bold pt-1 border-t border-white/10">
-                    <span>Withdrawal Amount:</span>
-                    <span className="text-success">{selectedAmount.toLocaleString('en-US')} XAF</span>
+
+                  {/* Security Invariant Notice */}
+                  <div className="flex items-center gap-2.5 p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-[10.5px] font-sans leading-snug">
+                    <ShieldCheck size={18} weight="fill" className="shrink-0 text-emerald-400" />
+                    <span>
+                      SplitM does not collect user PINs. Validate the transfer securely on your phone's native prompt.
+                    </span>
                   </div>
-                  <p className="text-[10px] text-white/50 pt-1">
-                    Approval directly debits your wallet and credits the group escrow pot. Fee: 0 XAF.
-                  </p>
                 </div>
 
-                <div>
-                  <label
-                    htmlFor="ussd-pin"
-                    className="block text-[10px] uppercase tracking-wider font-mono text-white/70 mb-1"
-                  >
-                    Enter 4-digit PIN to authorize withdrawal:
-                  </label>
-                  <input
-                    id="ussd-pin"
-                    type="password"
-                    maxLength={4}
-                    value={pinInput}
-                    onChange={(e) => setPinInput(e.target.value)}
-                    placeholder="••••"
-                    autoFocus
-                    required
-                    className="w-full text-center tracking-[0.6em] text-xl font-mono py-2.5 rounded-xl bg-black/80 border border-white/20 text-white focus:outline-none focus:border-accent"
-                  />
+                {/* Live Network Polling Pulse */}
+                <div className="py-1 flex items-center justify-center gap-2 text-[11px] font-mono text-white/70">
+                  <span className="w-2 h-2 rounded-full bg-accent animate-ping" />
+                  <span>Awaiting confirmation from operator network...</span>
                 </div>
 
-                <div className="flex items-center gap-2 pt-2">
+                <div className="flex items-center gap-2 pt-1">
                   <button
                     type="button"
                     onClick={() => {
@@ -440,17 +441,18 @@ export const PooledMoMoDrawer: React.FC<PooledMoMoDrawerProps> = ({
                     }}
                     className="w-1/2 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-xs font-mono text-white/80 transition-colors"
                   >
-                    Decline
+                    Decline / Cancel
                   </button>
                   <button
-                    type="submit"
+                    type="button"
+                    onClick={() => handleApproveWithdrawal()}
                     className="w-1/2 py-2.5 rounded-xl bg-accent hover:opacity-90 text-xs font-mono font-bold text-white transition-opacity flex items-center justify-center gap-1.5 shadow-md"
                   >
-                    <ShieldCheck size={16} weight="bold" />
-                    Approve Debit
+                    <Check size={16} weight="bold" />
+                    Validated on Phone
                   </button>
                 </div>
-              </form>
+              </div>
             )}
 
             {pushStage === 'success' && (

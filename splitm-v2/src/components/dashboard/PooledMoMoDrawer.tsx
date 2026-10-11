@@ -230,7 +230,7 @@ export const PooledMoMoDrawer: React.FC<PooledMoMoDrawerProps> = ({
                 </div>
                 <div>
                   <div className="text-[10px] font-mono uppercase tracking-wider text-muted">
-                    Attached Debtor Phone Number
+                    Linked Mobile Number
                   </div>
                   {isEditingPhone ? (
                     <input

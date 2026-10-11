@@ -46,7 +46,7 @@ export const GroupReceiptShareModal: React.FC<GroupReceiptShareModalProps> = ({
         from: d.name,
         to: c.name,
         amount: amt,
-        provider: c.paymentProvider === 'orange' ? 'Orange Money (*144#)' : 'MTN MoMo (*126#)',
+        provider: c.paymentProvider === 'orange' ? 'Orange Money (#150#)' : 'MTN MoMo (*126#)',
       };
     });
   }
@@ -209,7 +209,7 @@ export const GroupReceiptShareModal: React.FC<GroupReceiptShareModalProps> = ({
 
       ctx.fillStyle = '#E0643F';
       ctx.font = 'bold 12px "JetBrains Mono", monospace';
-      ctx.fillText(`POOL MONEY POT: ${(group.pooledCollected ?? 0).toLocaleString('en-US')} / ${group.pooledTarget.toLocaleString('en-US')} XAF (${Math.round(((group.pooledCollected ?? 0) / group.pooledTarget) * 100)}% FUNDED)`, 56, y + 8);
+      ctx.fillText(`POOLED MONEY POT: ${(group.pooledCollected ?? 0).toLocaleString('en-US')} / ${group.pooledTarget.toLocaleString('en-US')} XAF (${Math.round(((group.pooledCollected ?? 0) / group.pooledTarget) * 100)}% FUNDED)`, 56, y + 8);
       y += 42;
     }
 
@@ -240,7 +240,7 @@ export const GroupReceiptShareModal: React.FC<GroupReceiptShareModalProps> = ({
       : '✅ All group debts are settled up!';
 
   const poolMoneyText = group.pooledTarget
-    ? `\n*Pool Money Pot:*\nCollected: ${(group.pooledCollected ?? 0).toLocaleString('en-US')} / ${group.pooledTarget.toLocaleString('en-US')} XAF (${Math.round(((group.pooledCollected ?? 0) / group.pooledTarget) * 100)}% funded)`
+    ? `\n*Pooled Money Pot:*\nCollected: ${(group.pooledCollected ?? 0).toLocaleString('en-US')} / ${group.pooledTarget.toLocaleString('en-US')} XAF (${Math.round(((group.pooledCollected ?? 0) / group.pooledTarget) * 100)}% funded)`
     : '';
 
   const receiptContent = `🧾 *SplitM Group Expense Receipt*

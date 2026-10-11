@@ -1,7 +1,5 @@
-const CACHE_NAME = 'splitm-v2-cache-v1';
+const CACHE_NAME = 'splitm-v2-cache-v3';
 const STATIC_ASSETS = [
-  '/',
-  '/index.html',
   '/manifest.json',
   '/favicon.svg'
 ];
@@ -22,7 +20,7 @@ self.addEventListener('activate', (event) => {
     caches.keys().then((keys) => {
       return Promise.all(
         keys.map((key) => {
-          // Purge all legacy caches, including splitm-cache-v* and older v2 caches
+          // Immediately purge all older caches so users never run stale code
           if (key !== CACHE_NAME) {
             console.log('[SW] Purging outdated cache:', key);
             return caches.delete(key);

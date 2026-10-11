@@ -45,8 +45,8 @@ export const PooledMoMoDrawer: React.FC<PooledMoMoDrawerProps> = ({
   // Determine individual quota (target / members)
   const quotaPerMember = Math.round(target / Math.max(1, group.members.length));
 
-  const providerCode = provider === 'mtn' ? '*126#' : '*144#';
-  const providerName = provider === 'mtn' ? 'MTN MoMo (*126#)' : 'Orange Money (*144#)';
+  const providerCode = provider === 'mtn' ? '*126#' : '#150#';
+  const providerName = provider === 'mtn' ? 'MTN MoMo (*126#)' : 'Orange Money (#150#)';
 
   const handleStartDirectWithdrawal = () => {
     triggerHaptic('medium');
@@ -91,7 +91,7 @@ export const PooledMoMoDrawer: React.FC<PooledMoMoDrawerProps> = ({
             </div>
             <div>
               <h3 id="pool-money-title" className="font-serif text-lg font-medium text-primary">
-                Pool Money Pot
+                Pooled Money Pot
               </h3>
               <p className="text-xs text-muted font-sans">{group.name} • Shared Group Purchase</p>
             </div>
@@ -180,7 +180,7 @@ export const PooledMoMoDrawer: React.FC<PooledMoMoDrawerProps> = ({
                                 : 'bg-[#FF7900]/15 text-[#CC6100] dark:text-[#FF7900]'
                             }`}
                           >
-                            {memberProvider === 'mtn' ? 'MTN (*126#)' : 'Orange (*144#)'}
+                            {memberProvider === 'mtn' ? 'MTN (*126#)' : 'Orange (#150#)'}
                           </span>
                         </div>
                       </div>
@@ -325,7 +325,7 @@ export const PooledMoMoDrawer: React.FC<PooledMoMoDrawerProps> = ({
                   }`}
                 >
                   <span className="w-2.5 h-2.5 rounded-full bg-[#FF7900]" />
-                  Orange Money (*144#)
+                  Orange Money (#150#)
                 </button>
               </div>
             </div>

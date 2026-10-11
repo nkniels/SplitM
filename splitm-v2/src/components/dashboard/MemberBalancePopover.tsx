@@ -32,7 +32,7 @@ export const MemberBalancePopover: React.FC<MemberBalancePopoverProps> = ({
   return (
     <div
       style={positionStyle}
-      className="absolute z-30 w-56 rounded-2xl bg-surface border border-border p-3 shadow-xl animate-modal-enter text-left"
+      className="absolute z-30 w-56 max-w-[calc(100%-28px)] rounded-2xl bg-surface border border-border p-3 shadow-xl animate-modal-enter text-left"
       role="dialog"
       aria-label={`Balance for ${member.name}`}
     >

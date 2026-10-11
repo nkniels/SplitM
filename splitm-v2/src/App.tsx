@@ -34,6 +34,9 @@ export default function App() {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       clearTimeout(authTimeout);
       if (firebaseUser) {
+        try {
+          localStorage.removeItem('splitm_guest_user');
+        } catch (_) {}
         dispatch(setUser({
           uid: firebaseUser.uid,
           email: firebaseUser.email,
@@ -41,6 +44,15 @@ export default function App() {
           photoURL: firebaseUser.photoURL
         }));
       } else {
+        try {
+          const guest = localStorage.getItem('splitm_guest_user');
+          if (guest) {
+            const parsed = JSON.parse(guest);
+            dispatch(setUser(parsed));
+            dispatch(setAuthLoading(false));
+            return;
+          }
+        } catch (_) {}
         dispatch(setUser(null));
       }
       dispatch(setAuthLoading(false));

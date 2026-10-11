@@ -21,8 +21,8 @@ if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
     if ('caches' in window) {
       caches.keys().then((keys) => {
         keys.forEach((key) => {
-          if (key.startsWith('splitm-cache-')) {
-            console.log('[SplitM] Purging obsolete legacy cache:', key);
+          if (key !== 'splitm-v2-cache-v3') {
+            console.log('[SplitM] Purging obsolete cache:', key);
             caches.delete(key);
           }
         });
@@ -32,6 +32,7 @@ if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
     navigator.serviceWorker
       .register('/sw.js')
       .then((reg) => {
+        reg.update();
         console.log('[SplitM] SW registered:', reg.scope);
       })
       .catch((err) => {

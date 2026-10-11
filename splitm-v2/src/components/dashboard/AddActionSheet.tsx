@@ -86,14 +86,14 @@ export const AddActionSheet: React.FC<AddActionSheetProps> = ({
             />
           </button>
 
-          {/* Action 2: Start Pooled MoMo Payment */}
+          {/* Action 2: Start Pooled Money Payment */}
           <button
             onClick={() => {
               onClose();
               if (onStartPooled) {
                 onStartPooled();
               } else {
-                alert(`Pooled MoMo Payment flow opened for "${activeGroupName}".`);
+                alert(`Pooled Money Pot flow opened for "${activeGroupName}".`);
               }
             }}
             className="w-full text-left p-4 rounded-2xl bg-accent-subtle border border-accent/25 hover:border-accent hover:bg-accent-subtle/80 transition-all duration-150 flex items-center justify-between group"
@@ -105,7 +105,7 @@ export const AddActionSheet: React.FC<AddActionSheetProps> = ({
               <div>
                 <div className="flex items-center gap-1.5">
                   <h4 className="text-sm font-semibold text-primary">
-                    Pool Money Pot
+                    Pooled Money Pot
                   </h4>
                   <span className="text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded bg-accent/20 text-accent">
                     MoMo & OM

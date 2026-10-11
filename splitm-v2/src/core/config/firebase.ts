@@ -2,28 +2,23 @@ import { initializeApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
 import { getAuth, GoogleAuthProvider } from 'firebase/auth';
 
-const apiKey = import.meta.env.VITE_FIREBASE_API_KEY;
-const authDomain = import.meta.env.VITE_FIREBASE_AUTH_DOMAIN;
-const projectId = import.meta.env.VITE_FIREBASE_PROJECT_ID;
+const apiKey = import.meta.env.VITE_FIREBASE_API_KEY || 'AIzaSyCeGbodH-_hHykvAhVaEYKEvQidEAWv4Yg';
+const authDomain = import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || 'splitm-a1f60.firebaseapp.com';
+const projectId = import.meta.env.VITE_FIREBASE_PROJECT_ID || 'splitm-a1f60';
+const storageBucket = import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || 'splitm-a1f60.firebasestorage.app';
+const messagingSenderId = import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '450442987386';
+const appId = import.meta.env.VITE_FIREBASE_APP_ID || '1:450442987386:web:9a540805fac2f8123438c3';
 
-const isConfigured = Boolean(apiKey && authDomain && projectId);
+export const isConfigured = Boolean(apiKey && apiKey.startsWith('AIzaSy'));
 
-if (!isConfigured) {
-  console.warn(
-    '[SplitM] Firebase configuration is incomplete. ' +
-    'Running with offline fallback. ' +
-    'Ensure VITE_FIREBASE_API_KEY, VITE_FIREBASE_AUTH_DOMAIN, and ' +
-    'VITE_FIREBASE_PROJECT_ID are configured in .env or CI secrets.'
-  );
-}
-
-const firebaseConfig = {
-  apiKey: apiKey || 'dummy-api-key-offline',
-  authDomain: authDomain || 'splitm-offline.firebaseapp.com',
-  projectId: projectId || 'splitm-offline',
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || 'splitm-offline.appspot.com',
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '123456789',
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || '1:123456789:web:dummy'
+export const firebaseConfig = {
+  apiKey,
+  authDomain,
+  projectId,
+  storageBucket,
+  messagingSenderId,
+  appId,
+  measurementId: 'G-K6Y9M1XXP1'
 };
 
 let appInstance;

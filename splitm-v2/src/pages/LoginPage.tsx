@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
 import { Mail, Lock, Eye, EyeOff, Phone, KeyRound } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { useToast } from '../components/ui/Toast';
 import { SplitMLogo } from '../components/common/SplitMLogo';
+import { setUser } from '../modules/auth/auth.slice';
 import { 
   loginWithEmail, 
   registerWithEmail, 
@@ -16,6 +18,32 @@ import {
 import { cn } from '../core/utils/helpers';
 import { UndrawSecureLogin } from '../components/illustrations/UndrawIllustrations';
 import type { ConfirmationResult } from 'firebase/auth';
+
+function formatAuthError(error: any): string {
+  const msg = String(error?.code || error?.message || '');
+  if (msg.includes('auth/api-key-not-valid')) {
+    return 'Your browser loaded an older cached bundle. Tap "Clear Cache & Refresh" below to update.';
+  }
+  if (msg.includes('auth/operation-not-allowed')) {
+    return 'Email/Password registration is not yet enabled on this Firebase project. Please use "Sign in with Google" or "Continue as Guest".';
+  }
+  if (msg.includes('auth/invalid-credential') || msg.includes('auth/wrong-password') || msg.includes('auth/user-not-found')) {
+    return 'Invalid email or password. Please verify your credentials.';
+  }
+  if (msg.includes('auth/email-already-in-use')) {
+    return 'An account already exists with this email. Please sign in instead.';
+  }
+  if (msg.includes('auth/weak-password')) {
+    return 'Password must be at least 6 characters.';
+  }
+  if (msg.includes('auth/popup-closed-by-user') || msg.includes('auth/cancelled-popup-request')) {
+    return 'Google sign-in was closed before completion.';
+  }
+  if (msg.includes('auth/popup-blocked')) {
+    return 'Google popup was blocked by your browser. Please allow popups or use Guest Mode.';
+  }
+  return error?.message?.replace(/^Firebase:\s*(Error\s*)?\(auth\//i, '').replace(/\)\.?$/i, '') || 'Authentication failed. Please try again.';
+}
 
 type Tab = 'signin' | 'register' | 'phone';
 
@@ -74,8 +102,8 @@ function PasswordField({ label, value, onChange, autoComplete, error }: Password
 
 export default function LoginPage() {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const { toast } = useToast();
-
   const [activeTab, setActiveTab] = useState<Tab>('signin');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -102,7 +130,7 @@ export default function LoginPage() {
       await loginWithEmail(signInEmail, signInPassword);
       navigate('/');
     } catch (err: any) {
-      toast(err.message ?? 'Sign in failed. Please try again.', 'error');
+      toast(formatAuthError(err), 'error');
     } finally {
       setIsLoading(false);
     }
@@ -114,7 +142,7 @@ export default function LoginPage() {
       await loginWithGoogle();
       navigate('/');
     } catch (err: any) {
-      toast(err.message ?? 'Google sign in failed. Please try again.', 'error');
+      toast(formatAuthError(err), 'error');
     } finally {
       setIsLoading(false);
     }
@@ -132,7 +160,7 @@ export default function LoginPage() {
       await registerWithEmail(regEmail, regPassword);
       navigate('/');
     } catch (err: any) {
-      toast(err.message ?? 'Registration failed. Please try again.', 'error');
+      toast(formatAuthError(err), 'error');
     } finally {
       setIsLoading(false);
     }
@@ -152,7 +180,7 @@ export default function LoginPage() {
       setOtpSent(true);
       toast('SMS verification code sent! Check your phone.', 'success');
     } catch (err: any) {
-      toast(err.message ?? 'Failed to send verification SMS.', 'error');
+      toast(formatAuthError(err), 'error');
     } finally {
       setIsLoading(false);
     }
@@ -170,10 +198,44 @@ export default function LoginPage() {
       toast('Phone verified successfully!', 'success');
       navigate('/');
     } catch (err: any) {
-      toast(err.message ?? 'Invalid verification code. Please try again.', 'error');
+      toast(formatAuthError(err), 'error');
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleGuestSignIn = () => {
+    setIsLoading(true);
+    const guestUser = {
+      uid: 'demo-guest-' + Date.now().toString(36),
+      email: 'demo@splitm.app',
+      displayName: 'Demo Member',
+      photoURL: null,
+    };
+    try {
+      localStorage.setItem('splitm_guest_user', JSON.stringify(guestUser));
+    } catch (_) {}
+    dispatch(setUser(guestUser));
+    toast('Welcome to SplitM Demo Mode! All features active.', 'success');
+    navigate('/');
+  };
+
+  const handleHardRefresh = () => {
+    try {
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then((regs) => {
+          regs.forEach((r) => r.unregister());
+        });
+      }
+      if ('caches' in window) {
+        caches.keys().then((keys) => {
+          keys.forEach((k) => caches.delete(k));
+        });
+      }
+      localStorage.clear();
+      sessionStorage.clear();
+    } catch (_) {}
+    window.location.reload();
   };
 
   return (
@@ -409,6 +471,28 @@ export default function LoginPage() {
             >
               Sign in with Google
             </Button>
+
+            {/* Guest / Demo Mode Button */}
+            <div className="mt-3 space-y-2">
+              <Button
+                type="button"
+                variant="primary"
+                size="lg"
+                className="w-full bg-[#E0643F] hover:bg-[#D95D39] text-white"
+                onClick={handleGuestSignIn}
+                disabled={isLoading}
+              >
+                Continue as Guest (Demo Mode)
+              </Button>
+
+              <button
+                type="button"
+                onClick={handleHardRefresh}
+                className="text-[11px] font-mono text-muted hover:text-accent underline block mx-auto pt-2"
+              >
+                Trouble signing in? Clear Cache & Refresh
+              </button>
+            </div>
           </div>
         </div>
       </div>

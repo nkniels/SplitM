@@ -42,13 +42,13 @@ export const BottomNav: React.FC<BottomNavProps> = ({
         {/* Left Flank unDraw SaaS Illustration */}
         <div
           className="pointer-events-auto hidden min-[360px]:flex flex-col items-center justify-center w-12 h-14 mb-1 rounded-2xl bg-surface/95 border border-border shadow-sm p-1 transition-all duration-200 hover:scale-105 select-none overflow-hidden group"
-          title="Pool Money & Mobile Money Payments (Illustration by unDraw)"
+          title="Pooled Money Pot & Mobile Money Payments (Illustration by unDraw)"
         >
           <div className="w-8 h-7 flex items-center justify-center group-hover:scale-110 transition-transform">
             <UndrawTransferMoney width={30} height={22} primaryColor="#0284C7" secondaryColor="#D95D39" />
           </div>
           <span className="text-[7.5px] font-mono font-bold tracking-tight text-muted uppercase">
-            Pool
+            Pot
           </span>
         </div>
 

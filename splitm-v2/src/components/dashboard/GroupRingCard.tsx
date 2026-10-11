@@ -32,41 +32,41 @@ interface GroupRingCardProps {
  */
 function getInnerCardCoordinates(index: number, total: number, isActive: boolean) {
   if (!isActive) {
-    // Inactive card: safe corner & flank positions clear of the centered title
+    // Inactive card: comfortably contained strictly inside the border line
     const inactiveCoords = [
-      { left: '12%', top: '32%' },  // Upper-left flank
-      { left: '88%', top: '32%' },  // Upper-right flank
-      { left: '88%', top: '72%' },  // Lower-right flank
-      { left: '12%', top: '72%' },  // Lower-left flank
-      { left: '28%', top: '86%' },  // Bottom-left margin
-      { left: '72%', top: '86%' },  // Bottom-right margin
+      { left: '16%', top: '34%' },  // Upper-left flank
+      { left: '84%', top: '34%' },  // Upper-right flank
+      { left: '84%', top: '68%' },  // Lower-right flank
+      { left: '16%', top: '68%' },  // Lower-left flank
+      { left: '32%', top: '82%' },  // Bottom-left margin
+      { left: '68%', top: '82%' },  // Bottom-right margin
     ];
     return inactiveCoords[index % inactiveCoords.length];
   }
 
   if (total <= 6) {
-    // 6 members: distributed along outer flanks and bottom margin.
-    // Zero avatars at top-center, guaranteeing the group title is 100% unobstructed.
+    // 6 members: safely contained strictly within card border lines.
+    // Zero avatars at top-center, guaranteeing the group title is never hidden.
     const safePerimeter6 = [
-      { left: '12%', top: '18%' },  // Upper-left corner
-      { left: '88%', top: '18%' },  // Upper-right corner
-      { left: '90%', top: '54%' },  // Mid-right flank
-      { left: '80%', top: '86%' },  // Lower-right margin
-      { left: '20%', top: '86%' },  // Lower-left margin
-      { left: '10%', top: '54%' },  // Mid-left flank
+      { left: '16%', top: '22%' },  // Upper-left (inside corner)
+      { left: '84%', top: '22%' },  // Upper-right (inside corner)
+      { left: '86%', top: '52%' },  // Mid-right (inside border)
+      { left: '78%', top: '82%' },  // Lower-right (inside margin)
+      { left: '22%', top: '82%' },  // Lower-left (inside margin)
+      { left: '14%', top: '52%' },  // Mid-left (inside border)
     ];
     return safePerimeter6[index % safePerimeter6.length];
   }
 
-  // 7+ members: distributed along perimeter flanks and bottom corridor
+  // 7+ members: comfortably contained within card perimeter
   const safePerimeter7 = [
-    { left: '12%', top: '18%' },  // Upper-left corner
-    { left: '88%', top: '18%' },  // Upper-right corner
-    { left: '90%', top: '48%' },  // Mid-right flank
-    { left: '86%', top: '76%' },  // Lower-right flank
-    { left: '50%', top: '88%' },  // Bottom-center (safe below financial cards)
-    { left: '14%', top: '76%' },  // Lower-left flank
-    { left: '10%', top: '48%' },  // Mid-left flank
+    { left: '16%', top: '22%' },
+    { left: '84%', top: '22%' },
+    { left: '86%', top: '50%' },
+    { left: '80%', top: '78%' },
+    { left: '50%', top: '84%' },
+    { left: '20%', top: '78%' },
+    { left: '14%', top: '50%' },
   ];
   return safePerimeter7[index % safePerimeter7.length];
 }
@@ -81,7 +81,7 @@ export const GroupRingCard: React.FC<GroupRingCardProps> = ({
   className = '',
 }) => {
   const [selectedMember, setSelectedMember] = useState<RingMember | null>(null);
-  const [popoverCoords, setPopoverCoords] = useState<{ left?: string; top?: string; right?: string }>({});
+  const [popoverCoords, setPopoverCoords] = useState<React.CSSProperties>({});
 
   const handleAvatarClick = (e: React.MouseEvent, member: RingMember, index: number) => {
     e.stopPropagation();
@@ -97,11 +97,11 @@ export const GroupRingCard: React.FC<GroupRingCardProps> = ({
     const topPct = parseFloat(coords.top);
 
     if (leftPct > 60) {
-      setPopoverCoords({ right: '16px', top: `${Math.min(Math.max(topPct - 10, 15), 55)}%` });
+      setPopoverCoords({ right: '14px', top: `${Math.min(Math.max(topPct - 15, 12), 48)}%` });
     } else if (leftPct < 40) {
-      setPopoverCoords({ left: '16px', top: `${Math.min(Math.max(topPct - 10, 15), 55)}%` });
+      setPopoverCoords({ left: '14px', top: `${Math.min(Math.max(topPct - 15, 12), 48)}%` });
     } else {
-      setPopoverCoords({ left: '50%', top: topPct > 50 ? '25%' : '55%' });
+      setPopoverCoords({ left: '50%', transform: 'translateX(-50%)', top: topPct > 50 ? '16%' : '48%' });
     }
 
     setSelectedMember(member);
@@ -131,7 +131,7 @@ export const GroupRingCard: React.FC<GroupRingCardProps> = ({
     >
       {/* The Card Body — Avatars float strictly inside its borders */}
       <div
-        className={`relative w-full rounded-3xl bg-surface border transition-all duration-200 ${
+        className={`relative w-full rounded-3xl bg-surface border transition-all duration-200 overflow-hidden ${
           isActive
             ? 'border-border shadow-lg py-8 px-6 min-h-[290px]'
             : 'border-border-subtle bg-surface/90 py-5 px-5 min-h-[175px]'
@@ -220,7 +220,7 @@ export const GroupRingCard: React.FC<GroupRingCardProps> = ({
                       <div className="flex items-center justify-between text-[10px] text-muted uppercase tracking-wider font-mono">
                         <span className="flex items-center gap-1">
                           <Wallet size={11} weight="duotone" className="text-accent group-hover/pot:scale-110 transition-transform" />
-                          Pool Money
+                          Pooled Money Pot
                         </span>
                         <span className="tabular-nums font-bold text-accent">{pooledPct}%</span>
                       </div>

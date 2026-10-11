@@ -38,7 +38,7 @@ export const LoadingSplashScreen: React.FC<LoadingSplashScreenProps> = ({
         <div className="relative mb-4">
           <svg
             viewBox="0 0 100 100"
-            className="w-24 h-24 sm:w-28 sm:h-28 overflow-visible filter drop-shadow-[0_4px_16px_rgba(56,189,248,0.25)]"
+            className="w-24 h-24 sm:w-28 sm:h-28 overflow-visible drop-shadow-md"
           >
             <path
               d="M15 85 L15 35 L40 60 L60 30"
@@ -61,23 +61,18 @@ export const LoadingSplashScreen: React.FC<LoadingSplashScreenProps> = ({
           </svg>
         </div>
 
-        {/* Authentic Splash Title */}
+        {/* Modern Clean Splash Title (Zero amateur neon glow) */}
         <h1 className="font-sans font-extrabold text-3xl sm:text-4xl tracking-tight">
           <span
             style={{
-              background: 'linear-gradient(90deg, #004aad, #38bdf8)',
+              background: 'linear-gradient(135deg, #004aad 0%, #0284c7 60%, #38bdf8 100%)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
             }}
           >
             Split
           </span>
-          <span
-            style={{
-              color: '#38bdf8',
-              textShadow: '0 0 16px rgba(56, 189, 248, 0.6)',
-            }}
-          >
+          <span className="text-[#38bdf8] font-black">
             M
           </span>
         </h1>

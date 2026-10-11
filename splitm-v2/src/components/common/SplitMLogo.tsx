@@ -48,8 +48,8 @@ export const SplitMLogo: React.FC<SplitMLogoProps> = ({
       : 'text-4xl';
 
   return (
-    <div className={`inline-flex items-center gap-2.5 select-none ${className}`}>
-      {/* Elevated SplitM Zero-Sum Ribbon Vector Mark */}
+    <div className={`inline-flex items-center gap-2 select-none ${className}`}>
+      {/* Authentic Reverted Dual-Stroke SplitM Geometric M Mark */}
       <svg
         viewBox="0 0 100 100"
         width={pixelSize}
@@ -58,66 +58,50 @@ export const SplitMLogo: React.FC<SplitMLogoProps> = ({
         aria-hidden="true"
       >
         <defs>
-          <linearGradient id="splitm-grad-left" x1="0%" y1="100%" x2="50%" y2="0%">
+          <linearGradient id="splitm-stroke-left" x1="0%" y1="100%" x2="0%" y2="0%">
             <stop offset="0%" stopColor="#004aad" />
             <stop offset="100%" stopColor="#0284c7" />
           </linearGradient>
-          <linearGradient id="splitm-grad-right" x1="50%" y1="100%" x2="100%" y2="0%">
+          <linearGradient id="splitm-stroke-right" x1="0%" y1="100%" x2="0%" y2="0%">
             <stop offset="0%" stopColor="#0284c7" />
             <stop offset="100%" stopColor="#38bdf8" />
           </linearGradient>
-          <filter id="splitm-glow-filter" x="-20%" y="-20%" width="140%" height="140%">
-            <feDropShadow dx="0" dy="2" stdDeviation="3" floodColor="#0284c7" floodOpacity="0.3" />
-          </filter>
         </defs>
 
-        {/* Ambient background glow ring */}
-        <circle cx="50" cy="52" r="38" fill="none" stroke="#38bdf8" strokeWidth="1" strokeOpacity="0.12" strokeDasharray="3 3" />
-
-        {/* Left flowing stream: climbs from bottom left, curves over crest, weaves to zero-sum center */}
+        {/* Left stroke */}
         <path
-          d="M 18 82 C 18 48, 20 28, 28 24 C 36 20, 44 38, 50 56"
+          d="M15 85 L15 35 L40 60 L60 30"
           fill="none"
-          stroke="url(#splitm-grad-left)"
-          strokeWidth="11"
+          stroke="url(#splitm-stroke-left)"
+          strokeWidth="12"
           strokeLinecap="round"
           strokeLinejoin="round"
-          filter="url(#splitm-glow-filter)"
         />
 
-        {/* Right flowing stream: converges from center, climbs crest, anchors at bottom right */}
+        {/* Right stroke */}
         <path
-          d="M 50 56 C 56 38, 64 20, 72 24 C 80 28, 82 48, 82 82"
+          d="M40 85 L60 55 L85 85 L85 30"
           fill="none"
-          stroke="url(#splitm-grad-right)"
-          strokeWidth="11"
+          stroke="url(#splitm-stroke-right)"
+          strokeWidth="12"
           strokeLinecap="round"
           strokeLinejoin="round"
-          filter="url(#splitm-glow-filter)"
         />
-
-        {/* Zero-Sum Convergence Nexus Node (Intersection where debts clear) */}
-        <circle cx="50" cy="56" r="4.5" fill="#FFFFFF" stroke="#38bdf8" strokeWidth="2" />
       </svg>
 
-      {/* Authentic Dual-Gradient Logo Typography from Original Version */}
+      {/* Modern, Professional Big-Tech Clean Typography (Zero amateur neon glow) */}
       {showText && (
         <span className={`font-sans tracking-tight font-extrabold leading-none ${fontClass}`}>
           <span
             style={{
-              background: 'linear-gradient(90deg, #004aad, #38bdf8)',
+              background: 'linear-gradient(135deg, #004aad 0%, #0284c7 60%, #38bdf8 100%)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
             }}
           >
             Split
           </span>
-          <span
-            style={{
-              color: '#38bdf8',
-              textShadow: '0 0 14px rgba(56, 189, 248, 0.55)',
-            }}
-          >
+          <span className="text-[#38bdf8] font-black">
             M
           </span>
         </span>

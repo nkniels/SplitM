@@ -491,7 +491,7 @@ export default function DashboardPage() {
         {/* Top Header Bar (Mobile only — on desktop, the clean AppShell top navbar handles branding, theme & account) */}
         <header className="md:hidden px-5 pt-4 pb-2 flex items-center justify-between z-20">
           <div className="flex items-center gap-2">
-            <SplitMLogo size="sm" textSize="md" />
+            <SplitMLogo size="sm" showText={false} />
             <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded-full bg-border-subtle text-muted">
               Receipt Ledger
             </span>

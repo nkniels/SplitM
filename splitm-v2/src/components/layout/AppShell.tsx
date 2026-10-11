@@ -49,9 +49,9 @@ export default function AppShell({ children }: AppShellProps) {
       {/* Sticky top navbar (Desktop only - mobile uses the single PWA receipt screen layout) */}
       <header className="hidden md:block bg-surface border-b border-border sticky top-0 z-40 transition-colors duration-200">
         <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
-          {/* Left: authentic SplitM logo */}
+          {/* Left: authentic SplitM M mark (standalone M in loaded web app) */}
           <div className="flex items-center gap-2">
-            <SplitMLogo size="sm" textSize="md" />
+            <SplitMLogo size="sm" showText={false} />
           </div>
 
           {/* Center: GroupSelector */}

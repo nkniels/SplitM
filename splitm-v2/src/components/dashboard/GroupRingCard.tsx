@@ -28,45 +28,47 @@ interface GroupRingCardProps {
 
 /**
  * Calculates positions for avatars floating strictly INSIDE the card border lines.
- * Places members along the inner perimeter with safe margins from the borders.
+ * Guarantees zero avatars overlap or hide the centered card title or summary text.
  */
 function getInnerCardCoordinates(index: number, total: number, isActive: boolean) {
   if (!isActive) {
-    // Inactive card: compact inner corner coordinates
+    // Inactive card: safe corner & flank positions clear of the centered title
     const inactiveCoords = [
-      { left: '16%', top: '30%' },
-      { left: '84%', top: '30%' },
-      { left: '84%', top: '70%' },
-      { left: '16%', top: '70%' },
-      { left: '50%', top: '22%' },
-      { left: '50%', top: '78%' },
+      { left: '12%', top: '32%' },  // Upper-left flank
+      { left: '88%', top: '32%' },  // Upper-right flank
+      { left: '88%', top: '72%' },  // Lower-right flank
+      { left: '12%', top: '72%' },  // Lower-left flank
+      { left: '28%', top: '86%' },  // Bottom-left margin
+      { left: '72%', top: '86%' },  // Bottom-right margin
     ];
     return inactiveCoords[index % inactiveCoords.length];
   }
 
   if (total <= 6) {
-    const clock6Inside = [
-      { left: '14%', top: '24%' },  // 10 o'clock (upper-left)
-      { left: '50%', top: '16%' },  // 12 o'clock (top center)
-      { left: '86%', top: '24%' },  // 2 o'clock (upper-right)
-      { left: '86%', top: '78%' },  // 4 o'clock (lower-right)
-      { left: '50%', top: '86%' },  // 6 o'clock (bottom center)
-      { left: '14%', top: '78%' },  // 8 o'clock (lower-left)
+    // 6 members: distributed along outer flanks and bottom margin.
+    // Zero avatars at top-center, guaranteeing the group title is 100% unobstructed.
+    const safePerimeter6 = [
+      { left: '12%', top: '18%' },  // Upper-left corner
+      { left: '88%', top: '18%' },  // Upper-right corner
+      { left: '90%', top: '54%' },  // Mid-right flank
+      { left: '80%', top: '86%' },  // Lower-right margin
+      { left: '20%', top: '86%' },  // Lower-left margin
+      { left: '10%', top: '54%' },  // Mid-left flank
     ];
-    return clock6Inside[index % clock6Inside.length];
+    return safePerimeter6[index % safePerimeter6.length];
   }
 
-  // 7 members evenly distributed along the safe inner perimeter
-  const clock7Inside = [
-    { left: '14%', top: '24%' },
-    { left: '50%', top: '15%' },
-    { left: '86%', top: '24%' },
-    { left: '88%', top: '56%' },
-    { left: '74%', top: '84%' },
-    { left: '26%', top: '84%' },
-    { left: '12%', top: '56%' },
+  // 7+ members: distributed along perimeter flanks and bottom corridor
+  const safePerimeter7 = [
+    { left: '12%', top: '18%' },  // Upper-left corner
+    { left: '88%', top: '18%' },  // Upper-right corner
+    { left: '90%', top: '48%' },  // Mid-right flank
+    { left: '86%', top: '76%' },  // Lower-right flank
+    { left: '50%', top: '88%' },  // Bottom-center (safe below financial cards)
+    { left: '14%', top: '76%' },  // Lower-left flank
+    { left: '10%', top: '48%' },  // Mid-left flank
   ];
-  return clock7Inside[index % clock7Inside.length];
+  return safePerimeter7[index % safePerimeter7.length];
 }
 
 export const GroupRingCard: React.FC<GroupRingCardProps> = ({
@@ -158,10 +160,10 @@ export const GroupRingCard: React.FC<GroupRingCardProps> = ({
             </div>
           </div>
 
-          {/* Centered Content: Group Name & Summary Text */}
-          <div className="flex flex-col items-center justify-center text-center mt-2">
+          {/* Centered Content: Group Name & Summary Text (Elevated z-20 so it is never obscured) */}
+          <div className="relative z-20 flex flex-col items-center justify-center text-center mt-2 px-8 sm:px-12 pointer-events-none">
             <h2
-              className={`font-serif tracking-tight text-primary transition-colors ${
+              className={`font-serif tracking-tight text-primary transition-colors pointer-events-auto ${
                 isActive ? 'text-2xl sm:text-3xl font-medium' : 'text-xl font-normal'
               }`}
             >
@@ -169,7 +171,7 @@ export const GroupRingCard: React.FC<GroupRingCardProps> = ({
             </h2>
 
             {/* One-line summary text */}
-            <div className="mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-border-subtle text-xs font-medium">
+            <div className="mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-border-subtle text-xs font-medium pointer-events-auto">
               <span
                 className={`w-1.5 h-1.5 rounded-full ${
                   group.userBalanceType === 'owed'

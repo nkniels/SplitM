@@ -87,35 +87,29 @@ export const DashboardSkeleton: React.FC<DashboardSkeletonProps> = ({ className 
                 </div>
               </div>
 
-              {/* Floating Inner Avatar Skeletons (Positioned strictly inside card boundaries) */}
-              {/* 10 o'clock */}
+              {/* Floating Inner Avatar Skeletons (Positioned strictly inside card boundaries, clear of title) */}
               <div
-                style={{ left: '14%', top: '24%', transform: 'translate(-50%, -50%)' }}
+                style={{ left: '12%', top: '18%', transform: 'translate(-50%, -50%)' }}
                 className="absolute z-10 w-10 h-10 rounded-full bg-surface-elevated border-2 border-border/80 shadow-md animate-pulse"
               />
-              {/* 12 o'clock */}
               <div
-                style={{ left: '50%', top: '16%', transform: 'translate(-50%, -50%)' }}
+                style={{ left: '88%', top: '18%', transform: 'translate(-50%, -50%)' }}
                 className="absolute z-10 w-10 h-10 rounded-full bg-surface-elevated border-2 border-border/80 shadow-md animate-pulse"
               />
-              {/* 2 o'clock */}
               <div
-                style={{ left: '86%', top: '24%', transform: 'translate(-50%, -50%)' }}
+                style={{ left: '90%', top: '54%', transform: 'translate(-50%, -50%)' }}
                 className="absolute z-10 w-10 h-10 rounded-full bg-surface-elevated border-2 border-border/80 shadow-md animate-pulse"
               />
-              {/* 4 o'clock */}
               <div
-                style={{ left: '86%', top: '78%', transform: 'translate(-50%, -50%)' }}
+                style={{ left: '80%', top: '86%', transform: 'translate(-50%, -50%)' }}
                 className="absolute z-10 w-10 h-10 rounded-full bg-surface-elevated border-2 border-border/80 shadow-md animate-pulse"
               />
-              {/* 6 o'clock */}
               <div
-                style={{ left: '50%', top: '86%', transform: 'translate(-50%, -50%)' }}
+                style={{ left: '20%', top: '86%', transform: 'translate(-50%, -50%)' }}
                 className="absolute z-10 w-10 h-10 rounded-full bg-surface-elevated border-2 border-border/80 shadow-md animate-pulse"
               />
-              {/* 8 o'clock */}
               <div
-                style={{ left: '14%', top: '78%', transform: 'translate(-50%, -50%)' }}
+                style={{ left: '10%', top: '54%', transform: 'translate(-50%, -50%)' }}
                 className="absolute z-10 w-10 h-10 rounded-full bg-surface-elevated border-2 border-border/80 shadow-md animate-pulse"
               />
             </div>

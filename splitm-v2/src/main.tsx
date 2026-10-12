@@ -70,7 +70,7 @@ try {
       <div style="background:${cardBg};border:1px solid ${border};border-radius:16px;padding:2rem;max-width:540px;width:100%;box-shadow:0 20px 25px -5px rgba(0,0,0,0.3);">
         <h1 style="font-size:1.4rem;font-weight:700;margin-bottom:0.75rem;">SplitM encountered an error</h1>
         <p style="color:#94a3b8;font-size:0.9rem;margin-bottom:1.5rem;">The application could not render. Please check network connection or reload.</p>
-        <pre style="background:rgba(0,0,0,0.2);padding:1rem;border-radius:8px;font-size:0.75rem;color:#f87171;text-align:left;overflow-x:auto;margin-bottom:1.5rem;">${e}</pre>
+        <pre style="background:rgba(0,0,0,0.2);padding:1rem;border-radius:8px;font-size:0.75rem;color:#f87171;text-align:left;overflow-x:auto;margin-bottom:1.5rem;">An error occurred while loading the application.</pre>
         <button onclick="window.location.reload(true)" style="background:#6366f1;color:#fff;border:none;padding:0.6rem 1.25rem;border-radius:8px;font-weight:600;cursor:pointer;">Reload SplitM</button>
       </div>
     </div>

@@ -26,35 +26,50 @@ service cloud.firestore {
       allow create: if isAuthenticated() && request.resource.data.createdBy == request.auth.uid;
       allow update, delete: if isAuthenticated() && resource.data.createdBy == request.auth.uid;
 
-      // Subcollections (if used)
+      // Subcollections
       match /members/{memberId} {
-        allow read, write: if isAuthenticated();
+        allow read: if isAuthenticated();
+        allow create, update, delete: if isGroupOwner(groupId);
       }
 
       match /expenses/{expenseId} {
-        allow read, write: if isAuthenticated() &&
+        allow read: if isAuthenticated();
+        allow delete: if isGroupOwner(groupId);
+        allow create, update: if isGroupOwner(groupId) &&
           request.resource.data.amount > 0 &&
           request.resource.data.amount < 1000000;
       }
 
       match /settlements/{settlementId} {
-        allow read, write: if isAuthenticated();
+        allow read: if isAuthenticated();
+        allow create, update, delete: if isGroupOwner(groupId);
       }
     }
 
     // Root collections (as stored by SplitM sync services)
     match /members/{memberId} {
-      allow read, write: if isAuthenticated();
+      allow read: if isAuthenticated();
+      allow update, delete: if isAuthenticated() && isGroupOwner(resource.data.groupId);
+      allow create: if isAuthenticated() && isGroupOwner(request.resource.data.groupId);
     }
 
     match /expenses/{expenseId} {
-      allow read, write: if isAuthenticated() &&
+      allow read: if isAuthenticated();
+      allow delete: if isAuthenticated() && isGroupOwner(resource.data.groupId);
+      allow update: if isAuthenticated() &&
+        isGroupOwner(resource.data.groupId) &&
+        request.resource.data.amount > 0 &&
+        request.resource.data.amount < 1000000;
+      allow create: if isAuthenticated() &&
+        isGroupOwner(request.resource.data.groupId) &&
         request.resource.data.amount > 0 &&
         request.resource.data.amount < 1000000;
     }
 
     match /settlements/{settlementId} {
-      allow read, write: if isAuthenticated();
+      allow read: if isAuthenticated();
+      allow update, delete: if isAuthenticated() && isGroupOwner(resource.data.groupId);
+      allow create: if isAuthenticated() && isGroupOwner(request.resource.data.groupId);
     }
 
     // Notifications & Backups

@@ -28,33 +28,43 @@ service cloud.firestore {
 
       // Subcollections (if used)
       match /members/{memberId} {
-        allow read, write: if isAuthenticated();
+        allow read: if isAuthenticated();
+        allow write: if isGroupOwner(groupId);
       }
 
       match /expenses/{expenseId} {
-        allow read, write: if isAuthenticated() &&
+        allow read: if isAuthenticated();
+        allow delete: if isGroupOwner(groupId);
+        allow create, update: if isGroupOwner(groupId) &&
           request.resource.data.amount > 0 &&
           request.resource.data.amount < 1000000;
       }
 
       match /settlements/{settlementId} {
-        allow read, write: if isAuthenticated();
+        allow read: if isAuthenticated();
+        allow write: if isGroupOwner(groupId);
       }
     }
 
     // Root collections (as stored by SplitM sync services)
     match /members/{memberId} {
-      allow read, write: if isAuthenticated();
+      allow read: if isAuthenticated();
+      allow create, update: if isAuthenticated() && isGroupOwner(request.resource.data.groupId);
+      allow delete: if isAuthenticated() && isGroupOwner(resource.data.groupId);
     }
 
     match /expenses/{expenseId} {
-      allow read, write: if isAuthenticated() &&
+      allow read: if isAuthenticated();
+      allow create, update: if isAuthenticated() && isGroupOwner(request.resource.data.groupId) &&
         request.resource.data.amount > 0 &&
         request.resource.data.amount < 1000000;
+      allow delete: if isAuthenticated() && isGroupOwner(resource.data.groupId);
     }
 
     match /settlements/{settlementId} {
-      allow read, write: if isAuthenticated();
+      allow read: if isAuthenticated();
+      allow create, update: if isAuthenticated() && isGroupOwner(request.resource.data.groupId);
+      allow delete: if isAuthenticated() && isGroupOwner(resource.data.groupId);
     }
 
     // Notifications & Backups

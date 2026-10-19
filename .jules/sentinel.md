@@ -1,0 +1,4 @@
+## 2024-05-15 - [Firestore Authorization Bypass via resource == null]
+**Vulnerability:** A bypass in `splitm-v2/firestore.rules` allowed users to create records for other users or create random user IDs. The `users` collection had a secondary `allow create: if isAuthenticated();` that overrode the more restrictive `allow write`. For `notifications` and `backups`, using `resource == null` within combined `allow read, write` bypasses checks upon document creation since `resource` is null, letting users inject arbitrary userIds.
+**Learning:** In Firestore rules, do not use `resource == null` to combine create logic with update/delete logic if security checks require verifying the data payload. Also, avoid duplicate overly broad `allow create` conditions.
+**Prevention:** Separate rules based on read/delete vs create/update. Use `resource.data` to check existing items and `request.resource.data` to check the incoming payload explicitly during creation and updates.

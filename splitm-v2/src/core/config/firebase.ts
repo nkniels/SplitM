@@ -2,12 +2,12 @@ import { initializeApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
 import { getAuth, GoogleAuthProvider } from 'firebase/auth';
 
-const apiKey = import.meta.env.VITE_FIREBASE_API_KEY || 'AIzaSyCeGbodH-_hHykvAhVaEYKEvQidEAWv4Yg';
-const authDomain = import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || 'splitm-a1f60.firebaseapp.com';
-const projectId = import.meta.env.VITE_FIREBASE_PROJECT_ID || 'splitm-a1f60';
-const storageBucket = import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || 'splitm-a1f60.firebasestorage.app';
-const messagingSenderId = import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '450442987386';
-const appId = import.meta.env.VITE_FIREBASE_APP_ID || '1:450442987386:web:9a540805fac2f8123438c3';
+const apiKey = import.meta.env.VITE_FIREBASE_API_KEY || '';
+const authDomain = import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || '';
+const projectId = import.meta.env.VITE_FIREBASE_PROJECT_ID || '';
+const storageBucket = import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || '';
+const messagingSenderId = import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '';
+const appId = import.meta.env.VITE_FIREBASE_APP_ID || '';
 
 export const isConfigured = Boolean(apiKey && apiKey.startsWith('AIzaSy'));
 
